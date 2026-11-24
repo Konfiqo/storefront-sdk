@@ -1,0 +1,74 @@
+{
+  "name": "@konfiqo/storefront-react",
+  "version": "0.4.0",
+  "description": "React hooks and components for the Storefront SDK.",
+  "license": "MIT",
+  "keywords": [
+    "storefront",
+    "ecommerce",
+    "commerce",
+    "react",
+    "hooks",
+    "konfiqo"
+  ],
+  "homepage": "https://github.com/Konfiqo/storefront-sdk/tree/main/packages/react#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Konfiqo/storefront-sdk.git",
+    "directory": "packages/react"
+  },
+  "bugs": {
+    "url": "https://github.com/Konfiqo/storefront-sdk/issues"
+  },
+  "type": "module",
+  "sideEffects": false,
+  "engines": {
+    "node": ">=20"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup && node scripts/smoke-dist.mjs",
+    "typecheck": "tsc -p tsconfig.json",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "@konfiqo/storefront-sdk": "^0.4.0",
+    "react": ">=18"
+  },
+  "devDependencies": {
+    "@konfiqo/storefront-sdk": "^0.4.0",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.0",
+    "jsdom": "^26.1.0",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4"
+  },
+  "dependencies": {
+    "@markdoc/markdoc": "^0.5.14"
+  }
+}
