@@ -276,8 +276,9 @@ carries `personalization: string | null` and `personalizationValid`, which is
 false when the stored text no longer satisfies the product's current rule;
 checkout then rejects with `invalid_personalization` and `details.lineIds`:
 remove those lines and add them again. `id`, `personalization` and
-`personalizationValid` are absent from older API versions: treat `id` as
-`variantId`, `personalization` as null and `personalizationValid` as true.
+`personalizationValid` are required in the types and need a Konfiqo commerce
+API that returns them; an older server omits them, and against one treat `id`
+as `variantId`, `personalization` as null and `personalizationValid` as true.
 Order lines carry `personalization?: string | null`.
 
 **Customer.** `phone` must be a Turkish mobile number (`05XX…`, `5XX…`,

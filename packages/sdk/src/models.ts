@@ -284,7 +284,8 @@ export interface CartLine {
   /**
    * Line id: the argument of `carts.updateLine` / `carts.removeLine`. The
    * variant id for a line without text, `<variantId>~<12 hex>` for a line
-   * with text. Absent from older API versions: treat it as `variantId`.
+   * with text. Required: needs a commerce API that returns it (older servers
+   * omit it; there, use `variantId`).
    */
   id: string;
   /** The variant this line holds. */
@@ -292,14 +293,14 @@ export interface CartLine {
   /** Units, 1–99. */
   quantity: number;
   /**
-   * The buyer's text for this line, or null. Absent from older API
-   * versions: treat it as null.
+   * The buyer's text for this line, or null. Required: older servers omit
+   * it (treat it as null there).
    */
   personalization: string | null;
   /**
    * False when the stored text no longer satisfies the product's current
-   * rule; checkout then answers `invalid_personalization`. Absent from
-   * older API versions: treat it as true.
+   * rule; checkout then answers `invalid_personalization`. Required: older
+   * servers omit it (treat it as true there).
    */
   personalizationValid: boolean;
   /** False when the variant is no longer sold. Checkout refuses the cart. */

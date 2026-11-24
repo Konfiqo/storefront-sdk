@@ -2,11 +2,13 @@
 
 ## 0.5.0
 
-- Line personalization (optional fields, absent from older API versions):
-  `Product.personalization?` (`ProductPersonalization`: `label`, `required`,
-  `minLength`, `maxLength`), `AddLineInput.personalization?`,
-  `CartLine.id` / `personalization` / `personalizationValid`,
-  `OrderLine.personalization?`, and the `invalid_personalization` error
+- Line personalization. `Product.personalization?` (`ProductPersonalization`:
+  `label`, `required`, `minLength`, `maxLength`), `AddLineInput.personalization?`
+  and `OrderLine.personalization?` are optional. `CartLine.id`,
+  `CartLine.personalization` and `CartLine.personalizationValid` are
+  required: they need a Konfiqo commerce API that returns them (released with
+  this version), and code that builds `CartLine` fixtures must add them. Also
+  the `invalid_personalization` error
   code (`details.lineIds?` on the checkout 409). `carts.updateLine` /
   `carts.removeLine` take a line id (`CartLine.id`); a variant id still
   matches a line without text.
