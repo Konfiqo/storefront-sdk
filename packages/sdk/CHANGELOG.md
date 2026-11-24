@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
 - Line personalization (optional fields, absent from older API versions):
   `Product.personalization?` (`ProductPersonalization`: `label`, `required`,

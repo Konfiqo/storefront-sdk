@@ -1,9 +1,10 @@
 # Changelog
 
-## Unreleased
+## 0.5.0
 
-- `useCart().addLine` accepts `personalization`; `updateLine` / `removeLine`
-  take a line id (`CartLine.id`). Requires the matching SDK version.
+- `useCart().addLine` accepts `personalization` and passes it through to the
+  SDK; `updateLine` / `removeLine` take a line id (`CartLine.id`). Requires
+  `@konfiqo/storefront-sdk` `^0.5.0`.
 
 ## 0.4.0
 

@@ -15,7 +15,7 @@ const pkg = JSON.parse(
 describe('package.json', () => {
   it('takes the SDK as a peer, so the app and this package share one copy', () => {
     expect(pkg.dependencies?.['@konfiqo/storefront-sdk']).toBeUndefined();
-    expect(pkg.peerDependencies?.['@konfiqo/storefront-sdk']).toBe('^0.4.0');
+    expect(pkg.peerDependencies?.['@konfiqo/storefront-sdk']).toBe('^0.5.0');
     expect(pkg.devDependencies?.['@konfiqo/storefront-sdk']).toBeDefined();
   });
 
@@ -26,8 +26,8 @@ describe('package.json', () => {
     ]);
   });
 
-  it('is at 0.4.0 and ships only dist, README and LICENSE', () => {
-    expect(pkg.version).toBe('0.4.0');
+  it('is at 0.5.0 and ships only dist, README and LICENSE', () => {
+    expect(pkg.version).toBe('0.5.0');
     expect(pkg.files).toEqual(['dist', 'README.md', 'LICENSE']);
   });
 });
