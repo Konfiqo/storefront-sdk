@@ -16,8 +16,11 @@ import {
 
 const KEY = cartIdKey('store-1');
 const line = (variantId: string, quantity: number) => ({
+  id: variantId,
   variantId,
   quantity,
+  personalization: null,
+  personalizationValid: true,
   purchasable: true,
   inStock: true,
   productId: 'p',
@@ -40,6 +43,28 @@ describe('useCart', () => {
     expect(result.current.itemCount).toBe(0);
     expect(client.carts.get).not.toHaveBeenCalled();
     expect(client.carts.create).not.toHaveBeenCalled();
+  });
+
+  it('passes the personalization text of addLine through', async () => {
+    const client = mockClient();
+    client.carts.create.mockResolvedValue(makeCart('c1'));
+    client.carts.addLine.mockResolvedValue(makeCart('c1'));
+    const { result } = renderHook(() => useCart(), {
+      wrapper: wrapper(client, memoryStorage()),
+    });
+    await waitFor(() => expect(result.current.status).toBe('ready'));
+    await act(async () => {
+      await result.current.addLine({
+        variantId: 'v1',
+        quantity: 1,
+        personalization: 'Sarı',
+      });
+    });
+    expect(client.carts.addLine).toHaveBeenCalledWith('c1', {
+      variantId: 'v1',
+      quantity: 1,
+      personalization: 'Sarı',
+    });
   });
 
   it('creates the cart lazily on the first write and persists its id', async () => {

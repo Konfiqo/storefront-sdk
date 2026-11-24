@@ -140,6 +140,31 @@ describe('routes', () => {
       body: { variantId: 'v1', quantity: 2 },
     },
     {
+      name: 'carts.addLine (personalization)',
+      call: (c) =>
+        c.carts.addLine('c1', {
+          variantId: 'v1',
+          quantity: 1,
+          personalization: 'Sarı',
+        }),
+      method: 'POST',
+      path: '/v1/carts/c1/lines',
+      body: { variantId: 'v1', quantity: 1, personalization: 'Sarı' },
+    },
+    {
+      name: 'carts.updateLine (personalized line id)',
+      call: (c) => c.carts.updateLine('c1', 'v1~abc', { quantity: 3 }),
+      method: 'PATCH',
+      path: '/v1/carts/c1/lines/v1~abc',
+      body: { quantity: 3 },
+    },
+    {
+      name: 'carts.removeLine (personalized line id)',
+      call: (c) => c.carts.removeLine('c1', 'v1~a/b'),
+      method: 'DELETE',
+      path: '/v1/carts/c1/lines/v1~a%2Fb',
+    },
+    {
       name: 'carts.updateLine',
       call: (c) => c.carts.updateLine('c1', 'v/1', { quantity: 3 }),
       method: 'PATCH',
@@ -561,6 +586,13 @@ describe('errors', () => {
       extra: { variantIds: ['v1', 'v2'] },
       details: { variantIds: ['v1', 'v2'] },
     },
+    {
+      error: 'invalid_personalization',
+      status: 409,
+      extra: { lineIds: ['v1~abc'] },
+      details: { lineIds: ['v1~abc'] },
+    },
+    { error: 'invalid_personalization', status: 400, details: {} },
     { error: 'amount_out_of_range', status: 400 },
     { error: 'nothing_to_pay', status: 400 },
     {

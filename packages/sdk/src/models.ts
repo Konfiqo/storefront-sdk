@@ -201,6 +201,18 @@ export interface ProductVariant {
   available: number;
 }
 
+/** The text a product asks the buyer for, once per cart line. */
+export interface ProductPersonalization {
+  /** What to ask for (e.g. the label of the input). */
+  label: string;
+  /** True when the product cannot be bought without the text. */
+  required: boolean;
+  /** Shortest accepted text, in characters (Unicode code points). */
+  minLength: number;
+  /** Longest accepted text, in characters (Unicode code points). */
+  maxLength: number;
+}
+
 /** A product. Only products with at least one sellable variant are listed. */
 export interface Product {
   /** Product id. */
@@ -226,6 +238,8 @@ export interface Product {
   category: { slug: string; name: string } | null;
   /** Sellable variants. */
   variants: ProductVariant[];
+  /** The text the product asks for per cart line; present only when it asks for one. */
+  personalization?: ProductPersonalization;
 }
 
 /** Paging information of a list. */
@@ -267,10 +281,27 @@ export type CartStatus = 'open' | 'ordered' | 'expired';
 
 /** A priced cart line. Prices are always computed server-side. */
 export interface CartLine {
+  /**
+   * Line id: the argument of `carts.updateLine` / `carts.removeLine`. The
+   * variant id for a line without text, `<variantId>~<12 hex>` for a line
+   * with text. Absent from older API versions: treat it as `variantId`.
+   */
+  id: string;
   /** The variant this line holds. */
   variantId: string;
   /** Units, 1–99. */
   quantity: number;
+  /**
+   * The buyer's text for this line, or null. Absent from older API
+   * versions: treat it as null.
+   */
+  personalization: string | null;
+  /**
+   * False when the stored text no longer satisfies the product's current
+   * rule; checkout then answers `invalid_personalization`. Absent from
+   * older API versions: treat it as true.
+   */
+  personalizationValid: boolean;
   /** False when the variant is no longer sold. Checkout refuses the cart. */
   purchasable: boolean;
   /** False when fewer units are available than the line asks for. Checkout refuses the cart. */
@@ -366,8 +397,14 @@ export interface Cart {
 export interface AddLineInput {
   /** Variant id from the catalog. */
   variantId: string;
-  /** Units to add, 1–99 (added to an existing line of the same variant). */
+  /** Units to add, 1–99 (added to an existing line of the same variant and text). */
   quantity: number;
+  /**
+   * The buyer's text, for a product that asks for one (see
+   * `Product.personalization`). Refused with `invalid_personalization` (400)
+   * when it breaks the product's rule, or when the product asks for none.
+   */
+  personalization?: string;
 }
 
 /** Body of `carts.updateLine`. */
@@ -552,6 +589,8 @@ export interface OrderLine {
   quantity: number;
   /** Line total, minor units. */
   lineTotalMinor: number;
+  /** The buyer's text for this line; absent or null when there is none. */
+  personalization?: string | null;
 }
 
 /** A shipment of an order. */

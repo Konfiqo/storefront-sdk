@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+- Line personalization (optional fields, absent from older API versions):
+  `Product.personalization?` (`ProductPersonalization`: `label`, `required`,
+  `minLength`, `maxLength`), `AddLineInput.personalization?`,
+  `CartLine.id` / `personalization` / `personalizationValid`,
+  `OrderLine.personalization?`, and the `invalid_personalization` error
+  code (`details.lineIds?` on the checkout 409). `carts.updateLine` /
+  `carts.removeLine` take a line id (`CartLine.id`); a variant id still
+  matches a line without text.
+
 ## 0.4.0
 
 First release on npm. Every addition is an optional field (absent from

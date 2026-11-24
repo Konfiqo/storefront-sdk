@@ -90,9 +90,9 @@ const {
   error, // the last read / write error, or null
   previousCartId, // string | null — an ordered cart a write moved away from (see below)
   itemCount, // total units (for a badge)
-  addLine, // ({ variantId, quantity }) => Promise<Cart>
-  updateLine, // (variantId, { quantity }) => Promise<Cart>
-  removeLine, // (variantId) => Promise<Cart>
+  addLine, // ({ variantId, quantity, personalization? }) => Promise<Cart>
+  updateLine, // (lineId, { quantity }) => Promise<Cart>, lineId = cart line `id`
+  removeLine, // (lineId) => Promise<Cart>
   setCustomer, // (CustomerInput) => Promise<Cart>
   setAddress, // ({ shipping, billing? }) => Promise<Cart>
   setShippingOption, // (optionId) => Promise<Cart>
