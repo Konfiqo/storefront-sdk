@@ -44,15 +44,21 @@ jobs:
             echo "::error::tag $TAG does not match sdk $sdk and react $react"
             exit 1
           fi
+      # Trusted publishing: npm exchanges this job's GitHub OIDC token
+      # (id-token: write, environment npm-publish) for a short-lived publish
+      # credential. No npm token is stored in the repository. Needs npm 11.5.1+.
+      - name: npm must support trusted publishing
+        run: |
+          v="$(npm --version)"
+          if [ "$(printf '%s\n' 11.5.1 "$v" | sort -V | head -1)" != 11.5.1 ]; then
+            echo "::error::npm $v is older than 11.5.1 and cannot use trusted publishing"
+            exit 1
+          fi
       - run: npm ci
       - run: npm test
       - run: npm run build -w packages/sdk
       - run: npm run build -w packages/react
       - name: Publish @konfiqo/storefront-sdk
         run: npm publish --provenance --access public -w packages/sdk
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       - name: Publish @konfiqo/storefront-react
         run: npm publish --provenance --access public -w packages/react
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
