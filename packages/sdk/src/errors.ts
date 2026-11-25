@@ -42,6 +42,13 @@ export interface StorefrontErrorDetailsMap {
     totalMinor: number;
     shippingOptions: ShippingOption[];
   };
+  /**
+   * A personalization text is refused (400, no details) or, at checkout
+   * (409), a line's stored text no longer satisfies the product's rule:
+   * `lineIds` are those lines. Remove the line and add it again with a
+   * valid text.
+   */
+  invalid_personalization: { lineIds?: string[] };
   /** These variants cannot be bought (no longer sold, or not enough units). */
   out_of_stock: { variantIds: string[] };
   /** Collect what is missing, then check out again. */
@@ -82,6 +89,7 @@ export type StorefrontApiErrorCode =
   | 'checkout_in_progress'
   | 'checkout_incomplete'
   | 'cart_changed'
+  | 'invalid_personalization'
   | 'out_of_stock'
   | 'amount_out_of_range'
   | 'nothing_to_pay'
@@ -155,6 +163,7 @@ const API_CODES: ReadonlySet<string> = new Set<StorefrontApiErrorCode>([
   'checkout_in_progress',
   'checkout_incomplete',
   'cart_changed',
+  'invalid_personalization',
   'out_of_stock',
   'amount_out_of_range',
   'nothing_to_pay',
@@ -330,6 +339,13 @@ function apiError(
         totalMinor: n(b.totalMinor),
         shippingOptions: arr<ShippingOption>(b.shippingOptions),
       });
+    case 'invalid_personalization':
+      return new StorefrontError(
+        code,
+        status,
+        message,
+        Array.isArray(b.lineIds) ? { lineIds: arr<string>(b.lineIds) } : {},
+      );
     case 'out_of_stock':
       return new StorefrontError(code, status, message, {
         variantIds: arr<string>(b.variantIds),

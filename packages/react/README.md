@@ -11,7 +11,7 @@ the payment form and the checkout challenge.
   "build your own storefront" guide.
 - No styling: components render a plain `<div>` you can give a `className`.
 - No runtime dependencies. Peer dependencies: `@konfiqo/storefront-sdk`
-  `^0.4.0` and `react` ≥ 18. Install the SDK yourself, so your code and this
+  `^0.5.0` and `react` ≥ 18. Install the SDK yourself, so your code and this
   package share one copy (`isStorefrontError` also recognises errors from a
   second copy, but one copy keeps the bundle small).
 - Server-rendering safe: nothing touches `window`, `document` or storage
@@ -90,9 +90,9 @@ const {
   error, // the last read / write error, or null
   previousCartId, // string | null — an ordered cart a write moved away from (see below)
   itemCount, // total units (for a badge)
-  addLine, // ({ variantId, quantity }) => Promise<Cart>
-  updateLine, // (variantId, { quantity }) => Promise<Cart>
-  removeLine, // (variantId) => Promise<Cart>
+  addLine, // ({ variantId, quantity, personalization? }) => Promise<Cart>
+  updateLine, // (lineId, { quantity }) => Promise<Cart>, lineId = cart line `id`
+  removeLine, // (lineId) => Promise<Cart>
   setCustomer, // (CustomerInput) => Promise<Cart>
   setAddress, // ({ shipping, billing? }) => Promise<Cart>
   setShippingOption, // (optionId) => Promise<Cart>

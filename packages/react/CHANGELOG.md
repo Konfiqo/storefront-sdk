@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0
+
+- `useCart().addLine` accepts `personalization` and passes it through to the
+  SDK; `updateLine` / `removeLine` take a line id (`CartLine.id`). Requires
+  `@konfiqo/storefront-sdk` `^0.5.0`.
+
 ## 0.4.0
 
 - First release on npm. Requires `@konfiqo/storefront-sdk` `^0.4.0`; no

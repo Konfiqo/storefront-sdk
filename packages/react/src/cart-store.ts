@@ -6,6 +6,7 @@ import {
   isStorefrontError,
   loadCartId,
   saveCartId,
+  type AddLineInput,
   type AnyStorefrontError,
   type Cart,
   type CartIdStorage,
@@ -303,12 +304,12 @@ export class CartStore {
     });
   }
 
-  addLine = (input: { variantId: string; quantity: number }) =>
+  addLine = (input: AddLineInput) =>
     this.write((id) => this.client.carts.addLine(id, input));
-  updateLine = (variantId: string, input: { quantity: number }) =>
-    this.write((id) => this.client.carts.updateLine(id, variantId, input));
-  removeLine = (variantId: string) =>
-    this.write((id) => this.client.carts.removeLine(id, variantId));
+  updateLine = (lineId: string, input: { quantity: number }) =>
+    this.write((id) => this.client.carts.updateLine(id, lineId, input));
+  removeLine = (lineId: string) =>
+    this.write((id) => this.client.carts.removeLine(id, lineId));
   setCustomer = (
     input: Parameters<StorefrontClient['carts']['setCustomer']>[1],
   ) => this.write((id) => this.client.carts.setCustomer(id, input));

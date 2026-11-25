@@ -18,10 +18,10 @@ export interface UseCartResult extends CartSnapshot {
   itemCount: number;
   /** Adds units of a variant. Creates the cart on the first write. */
   addLine(input: AddLineInput): Promise<Cart>;
-  /** Sets a line's quantity. */
-  updateLine(variantId: string, input: UpdateLineInput): Promise<Cart>;
+  /** Sets a line's quantity (`lineId` is `CartLine.id`). */
+  updateLine(lineId: string, input: UpdateLineInput): Promise<Cart>;
   /** Removes a line. */
-  removeLine(variantId: string): Promise<Cart>;
+  removeLine(lineId: string): Promise<Cart>;
   /** Sets the buyer. */
   setCustomer(input: CustomerInput): Promise<Cart>;
   /** Sets the shipping (and billing) address. */

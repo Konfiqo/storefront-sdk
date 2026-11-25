@@ -7,8 +7,8 @@ const pkg = JSON.parse(
 ) as { version?: string; files?: string[]; dependencies?: object };
 
 describe('package.json', () => {
-  it('is at 0.4.0 and ships only dist, README and LICENSE', () => {
-    expect(pkg.version).toBe('0.4.0');
+  it('is at 0.5.0 and ships only dist, README and LICENSE', () => {
+    expect(pkg.version).toBe('0.5.0');
     expect(pkg.files).toEqual(['dist', 'README.md', 'LICENSE']);
   });
 

@@ -167,17 +167,20 @@ export interface StorefrontClient {
       input: AddLineInput,
       options?: RequestOptions,
     ): Promise<Cart>;
-    /** `PATCH /v1/carts/:id/lines/:variantId`: sets a line's quantity. */
+    /**
+     * `PATCH /v1/carts/:id/lines/:lineId`: sets a line's quantity. `lineId`
+     * is `CartLine.id`; a variant id still matches a line without text.
+     */
     updateLine(
       cartId: string,
-      variantId: string,
+      lineId: string,
       input: UpdateLineInput,
       options?: RequestOptions,
     ): Promise<Cart>;
-    /** `DELETE /v1/carts/:id/lines/:variantId`: removes a line. */
+    /** `DELETE /v1/carts/:id/lines/:lineId`: removes a line (`CartLine.id`). */
     removeLine(
       cartId: string,
-      variantId: string,
+      lineId: string,
       options?: RequestOptions,
     ): Promise<Cart>;
     /** `PUT /v1/carts/:id/customer`: sets the buyer. */
@@ -519,20 +522,26 @@ export function createStorefrontClient(
         request<Cart>(
           'POST',
           () => `${cart(cartId)}/lines`,
-          { variantId: input.variantId, quantity: input.quantity },
+          {
+            variantId: input.variantId,
+            quantity: input.quantity,
+            ...(input.personalization !== undefined && {
+              personalization: input.personalization,
+            }),
+          },
           o,
         ),
-      updateLine: (cartId, variantId, input, o) =>
+      updateLine: (cartId, lineId, input, o) =>
         request<Cart>(
           'PATCH',
-          () => `${cart(cartId)}/lines/${seg(variantId)}`,
+          () => `${cart(cartId)}/lines/${seg(lineId)}`,
           { quantity: input.quantity },
           o,
         ),
-      removeLine: (cartId, variantId, o) =>
+      removeLine: (cartId, lineId, o) =>
         request<Cart>(
           'DELETE',
-          () => `${cart(cartId)}/lines/${seg(variantId)}`,
+          () => `${cart(cartId)}/lines/${seg(lineId)}`,
           undefined,
           o,
         ),
