@@ -57,6 +57,7 @@ export type {
   UnsupportedPaymentMount,
 } from './payment';
 export { formatMoney } from './money';
+export { cookiesForHost, onDefaultDomain, pixelsForHost } from './host-pixels';
 export {
   cartIdKey,
   clearCartId,

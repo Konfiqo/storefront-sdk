@@ -11,8 +11,15 @@
   - Store analytics: `configureAnalytics`, `track`, `recordConsent` and
     `AnalyticsTracker`, which sends a `page_view` for each new `pathname`.
   - Ad pixels (Meta, TikTok, Google): `configurePixels`, `firePixel`,
-    `pixelsForHost`, `cookiesForHost`, `onDefaultDomain` and
-    `AdPixelsLoader`, which loads the pixels only under a `marketing` grant.
+    `onSecretPage` and `AdPixelsLoader`, which loads the pixels only under
+    a `marketing` grant. The host helpers `onDefaultDomain`,
+    `pixelsForHost` and `cookiesForHost` are in `@konfiqo/storefront-sdk`,
+    so server components can call them.
+  - `resetAnalytics` and `resetPixels` reset the module state between
+    tests (tests only).
+- Order-status (`/orders/…`) and cart-recovery (`/cart/recover`) pages
+  carry buyer secrets in the URL: analytics scrubs their URLs and pixels
+  send nothing there. Serve those pages only at these paths.
 - Pixel event ids follow the product feed rows, which are variants.
   `PixelEvent` `view_item` takes an optional `variantId` and `add_to_cart`
   a required `variantId`; `purchase` item ids are variant ids. Before a

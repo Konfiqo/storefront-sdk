@@ -5,7 +5,10 @@ import { useConsent } from './consent-provider';
 
 /** Props of {@link AdPixelsLoader}. */
 export interface AdPixelsLoaderProps {
-  /** The store's ad pixels (`Store.adPixels`, see `pixelsForHost`). */
+  /**
+   * The store's ad pixels (`Store.adPixels`, filtered by the SDK's
+   * `pixelsForHost`).
+   */
   pixels?: AdPixels;
   /** A default store domain: cookies are cleared on the host only. */
   hostOnly?: boolean;
@@ -22,6 +25,11 @@ export interface AdPixelsLoaderProps {
  * reports a page view on every route change. Nothing is configured until
  * the browser's choice has been read (hydration), so a stored grant never
  * looks like a refusal. Must be inside a `ConsentProvider`.
+ *
+ * Pages whose URL carries a buyer secret (`/orders/…` and `/cart/recover`,
+ * see `onSecretPage`) load no pixel script and send no pixel event. A
+ * custom storefront must serve its order-status and cart-recovery pages
+ * only at those paths, or not render this component there.
  */
 export function AdPixelsLoader({
   pixels,

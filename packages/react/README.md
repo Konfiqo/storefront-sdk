@@ -305,6 +305,80 @@ const { order, error, isLoading, isPolling, refetch } = useOrder(id, token, {
 Also exported: `isOrderSettled(order)`, `orderPollDelay(attempt)`,
 `ORDER_POLL_MIN_MS`, `ORDER_POLL_MAX_MS`, `isDeadCartError(e)`.
 
+## Consent, analytics and ad pixels
+
+Logic only: you build the banner, the preferences panel and the footer
+link yourself.
+
+```tsx
+'use client';
+import {
+  AdPixelsLoader,
+  AnalyticsTracker,
+  ConsentProvider,
+  recordConsent,
+} from '@konfiqo/storefront-react';
+import { usePathname } from 'next/navigation';
+
+export function Tracking({ store, baseUrl, publishableKey, pixels, hostOnly }) {
+  const pathname = usePathname();
+  return (
+    <ConsentProvider
+      cookies={store.cookies ?? []}
+      version={store.consentVersion ?? ''}
+      onDecision={recordConsent}
+    >
+      <AnalyticsTracker
+        baseUrl={baseUrl}
+        publishableKey={publishableKey}
+        pathname={pathname}
+      />
+      <AdPixelsLoader pixels={pixels} hostOnly={hostOnly} pathname={pathname} />
+      {/* your banner and panel, built on useConsent() */}
+    </ConsentProvider>
+  );
+}
+```
+
+- **Consent.** `ConsentProvider` keeps the shopper's choice in the strictly
+  necessary `_consent` cookie, per consent version. `useConsent()` gives
+  `needed`, `showBar`, `panelOpen`, `categories`, `cookies`, `stored`,
+  `known`, `open()`, `close()` and `decide(granted)`. `onDecision` receives
+  a `ConsentRecord` for every decision; an error it throws is ignored.
+- **Store analytics.** `AnalyticsTracker` configures `track` and sends a
+  `page_view` for each new `pathname`. Call `track('product_view',
+{ productId })`, `track('add_to_cart', { productId })` or
+  `track('checkout_start')` from your pages. Events are batched, never
+  throw, and are not sent from the store editor's preview tab. Each batch
+  states whether the shopper granted `analytics`.
+- **Ad pixels.** `AdPixelsLoader` loads Meta, TikTok and Google only under
+  a `marketing` grant for the current consent version, stops them and
+  clears their cookies on withdrawal, and reports a page view per
+  `pathname`. Report shop events with `firePixel`:
+  `{ name: 'view_item', productId, variantId? , priceMinor }`,
+  `{ name: 'add_to_cart', productId, variantId, priceMinor, quantity }`,
+  `{ name: 'begin_checkout', valueMinor }` and
+  `{ name: 'purchase', orderId, valueMinor, items }` (item `id` is the
+  variant id). Ids follow the product feed rows: pass `variantId` as soon
+  as a variant is chosen; before that, `view_item` names the product as a
+  `product_group`. Prices are in minor units.
+- **Which pixels and cookies a host may use.** On a default store domain,
+  filter with the SDK's `onDefaultDomain`, `pixelsForHost` and
+  `cookiesForHost`. They are server-safe, so call them in server
+  components; this package is client-only.
+- **Pages that carry buyer secrets.** The order-status page
+  (`/orders/{id}?token=…`) and the cart-recovery link
+  (`/cart/recover?t=…`) carry a secret in the URL. Analytics sends
+  `/orders/:id` with no query there, and sends no query on
+  `/cart/recover`. Pixels load no script and send no event on either path
+  (`onSecretPage(path)`). These paths are fixed: serve your order-status
+  and cart-recovery pages only at `/orders/…` and `/cart/recover`, or do
+  not render `AnalyticsTracker` and `AdPixelsLoader` (and do not call
+  `track` or `firePixel`) on them.
+- **Tests.** `resetAnalytics()` and `resetPixels()` forget the module
+  state between tests. They are for tests only; do not call them in
+  production code.
+
 ## Next.js App Router
 
 - The package is marked `'use client'`: import the provider, hooks and

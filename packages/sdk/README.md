@@ -504,6 +504,22 @@ none); a consent given for another version should be asked again.
 `store.legal.cookies` is the cookie policy text. All three are absent from
 API versions before cookie consent: treat them as `[]`, `''` and no text.
 
+Server-safe helpers for a store's own host (no browser API, so they run in
+server components):
+
+- `onDefaultDomain(host, suffix)` — whether `host` is the default store
+  domain suffix or a subdomain of it (case-insensitive; `false` without a
+  suffix).
+- `pixelsForHost(adPixels, defaultDomain)` — on a default domain only
+  Google is kept: Meta and TikTok write their cookies to the registrable
+  domain, which every default store domain shares.
+- `cookiesForHost(cookies, defaultDomain)` — on a default domain the
+  `customDomainOnly` cookies are dropped, and the list is empty when no
+  optional cookie is left (then no consent is needed).
+
+`@konfiqo/storefront-react` has the consent state, store analytics and
+the ad-pixel loader that use them.
+
 ## Helpers
 
 - `formatMoney(minor, currency, locale?)` — `Intl.NumberFormat` with the

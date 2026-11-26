@@ -86,7 +86,11 @@ export function configureAnalytics(next: AnalyticsConfig): void {
   config = next;
 }
 
-/** Test hook: forgets the configuration, the first-event state and the queue. */
+/**
+ * For tests only, not for production code: forgets the configuration, the
+ * first-event state, the landing check and the queue, so each test starts
+ * as a fresh page load. Call it in `beforeEach`.
+ */
 export function resetAnalytics(): void {
   config = null;
   first = true;

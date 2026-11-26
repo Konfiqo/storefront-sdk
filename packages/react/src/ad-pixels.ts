@@ -1,4 +1,4 @@
-import type { AdPixels, CookieInfo } from '@konfiqo/storefront-sdk';
+import type { AdPixels } from '@konfiqo/storefront-sdk';
 
 /**
  * What the pixel layer is told about; mapped onto each platform's events.
@@ -72,7 +72,11 @@ let granted = false;
 /** Platforms whose script has been added (once per page load). */
 const loaded = new Set<'meta' | 'tiktok' | 'google'>();
 
-/** Test hook: forgets the configuration and what was loaded. */
+/**
+ * For tests only, not for production code: forgets the configuration, the
+ * grant and which scripts were loaded, so each test starts as a fresh page
+ * load (storage and cookies are kept). Call it in `beforeEach`.
+ */
 export function resetPixels(): void {
   pixels = undefined;
   granted = false;
@@ -211,7 +215,11 @@ function loadGoogle(g: NonNullable<AdPixels['google']>): void {
  * (`/orders/{id}?token=…`) and the cart-recovery link (`/cart/recover?t=…`).
  * Platform scripts read the page URL and send it on, so pixels load nothing
  * and send nothing there; the server's events still report the purchase.
- * Same pages as the store analytics leaves out.
+ * Store analytics scrubs the same pages (`/orders/:id`, no query).
+ *
+ * The paths are fixed: a custom storefront must serve its order-status and
+ * cart-recovery pages only at `/orders/…` and `/cart/recover`, or send no
+ * analytics or pixel events from them.
  */
 export function onSecretPage(path: string = location.pathname): boolean {
   return path.startsWith('/orders/') || path.startsWith('/cart/recover');
@@ -404,43 +412,6 @@ export function configurePixels(
   } catch {
     // Pixels must never break the page.
   }
-}
-
-/** Whether `host` is a default store domain (`suffix` or below it). */
-export function onDefaultDomain(
-  host: string,
-  suffix: string | undefined,
-): boolean {
-  if (!suffix) return false;
-  const h = host.toLowerCase();
-  const s = suffix.toLowerCase();
-  return h === s || h.endsWith(`.${s}`);
-}
-
-/**
- * The pixels a host may load: Meta and TikTok write their cookies to the
- * registrable domain, which every default store domain shares, so they run
- * only on custom domains.
- */
-export function pixelsForHost(
-  p: AdPixels | undefined,
-  defaultDomain: boolean,
-): AdPixels | undefined {
-  if (!p || !defaultDomain) return p;
-  return p.google ? { google: p.google } : {};
-}
-
-/**
- * The cookies a host lists: on a default domain without the
- * `customDomainOnly` ones, and none at all when no optional cookie is left.
- */
-export function cookiesForHost(
-  cookies: CookieInfo[],
-  defaultDomain: boolean,
-): CookieInfo[] {
-  if (!defaultDomain) return cookies;
-  const kept = cookies.filter((c) => !c.customDomainOnly);
-  return kept.some((c) => c.category !== 'necessary') ? kept : [];
 }
 
 /** Whether `firePixel` would reach the platforms now. */

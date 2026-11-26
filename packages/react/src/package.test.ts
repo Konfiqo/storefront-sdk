@@ -29,12 +29,19 @@ describe('exports', () => {
       'AnalyticsTracker',
       'configurePixels',
       'firePixel',
-      'pixelsForHost',
-      'cookiesForHost',
-      'onDefaultDomain',
       'AdPixelsLoader',
+      'resetAnalytics',
+      'resetPixels',
+      'onSecretPage',
     ]) {
       expect(typeof mod[name], name).toBe('function');
+    }
+  });
+
+  it('leaves the server-safe host helpers to the SDK', async () => {
+    const mod = (await import('./index')) as Record<string, unknown>;
+    for (const name of ['pixelsForHost', 'cookiesForHost', 'onDefaultDomain']) {
+      expect(mod[name], name).toBeUndefined();
     }
   });
 });

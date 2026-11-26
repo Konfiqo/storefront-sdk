@@ -43,16 +43,20 @@ export type {
   OptionalCookieCategory,
   StoredConsent,
 } from './consent';
-export { configureAnalytics, track, recordConsent } from './analytics';
+export {
+  configureAnalytics,
+  track,
+  recordConsent,
+  resetAnalytics,
+} from './analytics';
 export type { AnalyticsEventType, AnalyticsExtra } from './analytics';
 export { AnalyticsTracker } from './analytics-tracker';
 export type { AnalyticsTrackerProps } from './analytics-tracker';
 export {
   configurePixels,
   firePixel,
-  pixelsForHost,
-  cookiesForHost,
-  onDefaultDomain,
+  onSecretPage,
+  resetPixels,
 } from './ad-pixels';
 export type { PixelEvent } from './ad-pixels';
 export { AdPixelsLoader } from './ad-pixels-loader';
