@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.6.0
+
+No change to the SDK API. Released together with
+`@konfiqo/storefront-react` 0.6.0, which adds cookie consent, store
+analytics and ad-pixel logic for custom storefronts. Pixel event ids there
+follow the product feed rows (variant ids; the product as
+`product_group` before a variant is chosen).
+
 ## 0.5.0
 
 - Line personalization. `Product.personalization?` (`ProductPersonalization`:

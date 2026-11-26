@@ -19,12 +19,30 @@ describe('exports', () => {
     expect(typeof mod.useConsent).toBe('function');
     expect(mod.OPTIONAL_CATEGORIES).toEqual(['analytics', 'marketing']);
   });
+
+  it('exposes store analytics and ad pixels', async () => {
+    const mod = (await import('./index')) as Record<string, unknown>;
+    for (const name of [
+      'configureAnalytics',
+      'track',
+      'recordConsent',
+      'AnalyticsTracker',
+      'configurePixels',
+      'firePixel',
+      'pixelsForHost',
+      'cookiesForHost',
+      'onDefaultDomain',
+      'AdPixelsLoader',
+    ]) {
+      expect(typeof mod[name], name).toBe('function');
+    }
+  });
 });
 
 describe('package.json', () => {
   it('takes the SDK as a peer, so the app and this package share one copy', () => {
     expect(pkg.dependencies?.['@konfiqo/storefront-sdk']).toBeUndefined();
-    expect(pkg.peerDependencies?.['@konfiqo/storefront-sdk']).toBe('^0.5.0');
+    expect(pkg.peerDependencies?.['@konfiqo/storefront-sdk']).toBe('^0.6.0');
     expect(pkg.devDependencies?.['@konfiqo/storefront-sdk']).toBeDefined();
   });
 
@@ -35,8 +53,8 @@ describe('package.json', () => {
     ]);
   });
 
-  it('is at 0.5.0 and ships only dist, README and LICENSE', () => {
-    expect(pkg.version).toBe('0.5.0');
+  it('is at 0.6.0 and ships only dist, README and LICENSE', () => {
+    expect(pkg.version).toBe('0.6.0');
     expect(pkg.files).toEqual(['dist', 'README.md', 'LICENSE']);
   });
 });

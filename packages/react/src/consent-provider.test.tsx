@@ -193,6 +193,23 @@ describe('ConsentProvider', () => {
     expect(document.activeElement).toBe(opener);
   });
 
+  it('a throwing onDecision still stores, closes the panel and returns focus', () => {
+    const onDecision = vi.fn(() => {
+      throw new Error('recording failed');
+    });
+    render(ui(COOKIES, 'v1', onDecision));
+    click('reject');
+    const opener = screen.getByRole('button', { name: 'open' });
+    opener.focus();
+    fireEvent.click(opener);
+    expect(state().panelOpen).toBe(true);
+    click('accept');
+    expect(onDecision).toHaveBeenCalledTimes(2);
+    expect(state().panelOpen).toBe(false);
+    expect(state().granted).toEqual(['analytics']);
+    expect(document.activeElement).toBe(opener);
+  });
+
   it('a bar decision moves focus to the main content', () => {
     render(ui(COOKIES, 'v1'));
     const reject = screen.getByRole('button', { name: 'reject' });

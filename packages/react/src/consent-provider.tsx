@@ -74,7 +74,7 @@ export interface ConsentProviderProps {
   version: string;
   /**
    * Called after every stored decision, for example to record it with
-   * commerce. Must not throw.
+   * commerce (`recordConsent`). An error it throws is ignored.
    */
   onDecision?: (record: ConsentRecord) => void;
   children?: ReactNode;
@@ -148,7 +148,11 @@ export function ConsentProvider({
     (granted: OptionalCookieCategory[]) => {
       const allowed = categories.filter((c) => granted.includes(c));
       const consentId = writeConsent(version, allowed);
-      onDecisionRef.current?.({ consentId, granted: allowed, version });
+      try {
+        onDecisionRef.current?.({ consentId, granted: allowed, version });
+      } catch {
+        // A failing callback must not keep the panel open or lose focus.
+      }
       setDecidedVersion(version);
       if (!panelOpen) opener.current = null;
       restorePending.current = true;
