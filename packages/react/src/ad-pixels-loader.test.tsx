@@ -3,7 +3,7 @@
 import { act, render } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CookieInfo } from '@konfiqo/storefront-sdk';
-import { resetPixels } from './ad-pixels';
+import { firePixel, resetPixels } from './ad-pixels';
 import { writeConsent } from './consent';
 import { AdPixelsLoader } from './ad-pixels-loader';
 import { ConsentProvider } from './consent-provider';
@@ -91,5 +91,22 @@ describe('AdPixelsLoader', () => {
     expect(fbq()).toHaveLength(1);
     rerender(el('/p/shirt'));
     expect(fbq()).toHaveLength(2);
+  });
+
+  it('passes its currency to the pixel events', () => {
+    writeConsent('v1', ['marketing']);
+    render(
+      <ConsentProvider cookies={COOKIES} version="v1">
+        <AdPixelsLoader pixels={PIXELS} pathname="/" currency="EUR" />
+      </ConsentProvider>,
+    );
+    firePixel({ name: 'begin_checkout', valueMinor: 1000 });
+    const queue = (window as unknown as Record<string, { queue: unknown[][] }>)
+      .fbq!.queue;
+    expect(queue.find((c) => c[1] === 'InitiateCheckout')).toEqual([
+      'track',
+      'InitiateCheckout',
+      { value: 10, currency: 'EUR' },
+    ]);
   });
 });

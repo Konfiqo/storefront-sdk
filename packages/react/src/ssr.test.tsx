@@ -15,6 +15,7 @@ import {
   useProducts,
   useConsent,
   useStore,
+  onSecretPage,
 } from './index';
 import { mockClient } from './test-utils';
 
@@ -104,4 +105,12 @@ describe('provider refuses secret options', () => {
       ).toThrow(new RegExp(`config\\.${key}`));
     },
   );
+});
+
+describe('onSecretPage on the server', () => {
+  it('needs no location: no path defaults to a non-secret page', () => {
+    expect(typeof location).toBe('undefined');
+    expect(onSecretPage()).toBe(false);
+    expect(onSecretPage('/orders/o1')).toBe(true);
+  });
 });

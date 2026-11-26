@@ -13,6 +13,11 @@ export interface AdPixelsLoaderProps {
   /** A default store domain: cookies are cleared on the host only. */
   hostOnly?: boolean;
   /**
+   * The store's currency (ISO 4217) for every price sent to the platforms.
+   * Default `'TRY'`.
+   */
+  currency?: string;
+  /**
    * The current route's path, from your router (for example Next.js
    * `usePathname()`). Each new value reports one page view.
    */
@@ -34,14 +39,15 @@ export interface AdPixelsLoaderProps {
 export function AdPixelsLoader({
   pixels,
   hostOnly = false,
+  currency = 'TRY',
   pathname,
 }: AdPixelsLoaderProps) {
   const { stored, known } = useConsent();
   const granted = stored?.granted.includes('marketing') ?? false;
   useEffect(() => {
     if (!known) return;
-    configurePixels(pixels, granted, { hostOnly });
-  }, [pixels, granted, known, hostOnly]);
+    configurePixels(pixels, granted, { hostOnly, currency });
+  }, [pixels, granted, known, hostOnly, currency]);
   useEffect(() => {
     // Declared after the configure effect, so the scripts exist by now.
     if (granted) firePixel({ name: 'page_view' });

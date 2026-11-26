@@ -45,8 +45,8 @@ function itemOf(e: { productId: string; variantId?: string }): {
     : { id: e.productId, type: 'product_group' };
 }
 
-/** The store's currency (every price is in it). */
-const CURRENCY = 'TRY';
+/** The currency used when `configurePixels` is given none. */
+const DEFAULT_CURRENCY = 'TRY';
 const PURCHASE_KEY = 'px_purchase_';
 /**
  * Set (per store host: localStorage is per origin) once pixels were loaded
@@ -68,6 +68,8 @@ type PixelWindow = Window & {
 const win = (): PixelWindow => window as unknown as PixelWindow;
 
 let pixels: AdPixels | undefined;
+/** The store's currency (every price is in it). */
+let currency = DEFAULT_CURRENCY;
 let granted = false;
 /** Platforms whose script has been added (once per page load). */
 const loaded = new Set<'meta' | 'tiktok' | 'google'>();
@@ -79,6 +81,7 @@ const loaded = new Set<'meta' | 'tiktok' | 'google'>();
  */
 export function resetPixels(): void {
   pixels = undefined;
+  currency = DEFAULT_CURRENCY;
   granted = false;
   optedOut = false;
   loaded.clear();
@@ -221,7 +224,9 @@ function loadGoogle(g: NonNullable<AdPixels['google']>): void {
  * cart-recovery pages only at `/orders/…` and `/cart/recover`, or send no
  * analytics or pixel events from them.
  */
-export function onSecretPage(path: string = location.pathname): boolean {
+export function onSecretPage(
+  path: string = typeof location === 'undefined' ? '' : location.pathname,
+): boolean {
   return path.startsWith('/orders/') || path.startsWith('/cart/recover');
 }
 
@@ -385,15 +390,17 @@ function optIn(p: AdPixels): void {
  * on a withdrawal on this page, or on a denied page when this browser
  * loaded the store's pixels under an earlier grant (the marker), and only
  * those of the platforms configured. `hostOnly` (a default store domain)
- * keeps the deletion to the host.
+ * keeps the deletion to the host. `currency` (ISO 4217, default `'TRY'`)
+ * is the currency of every price and value sent to the platforms.
  */
 export function configurePixels(
   next: AdPixels | undefined,
   isGranted: boolean,
-  opts: { hostOnly?: boolean } = {},
+  opts: { hostOnly?: boolean; currency?: string } = {},
 ): void {
   try {
     pixels = next;
+    currency = opts.currency ?? DEFAULT_CURRENCY;
     const was = granted;
     granted = isGranted && !!next;
     if (granted && next) {
@@ -465,7 +472,7 @@ function meta(fbq: Fn, e: PixelEvent): void {
         content_ids: [it.id],
         content_type: it.type,
         value: major(e.priceMinor),
-        currency: CURRENCY,
+        currency,
       });
       return;
     }
@@ -481,13 +488,13 @@ function meta(fbq: Fn, e: PixelEvent): void {
           },
         ],
         value: major(e.priceMinor * e.quantity),
-        currency: CURRENCY,
+        currency,
       });
       return;
     case 'begin_checkout':
       fbq('track', 'InitiateCheckout', {
         value: major(e.valueMinor),
-        currency: CURRENCY,
+        currency,
       });
       return;
     case 'purchase':
@@ -503,7 +510,7 @@ function meta(fbq: Fn, e: PixelEvent): void {
             item_price: major(i.priceMinor),
           })),
           value: major(e.valueMinor),
-          currency: CURRENCY,
+          currency,
         },
         { eventID: e.orderId },
       );
@@ -531,7 +538,7 @@ function tiktok(ttq: NonNullable<PixelWindow['ttq']>, e: PixelEvent): void {
       ttq.track!('ViewContent', {
         contents: [content(it.id, 1, e.priceMinor, it.type)],
         value: major(e.priceMinor),
-        currency: CURRENCY,
+        currency,
       });
       return;
     }
@@ -539,13 +546,13 @@ function tiktok(ttq: NonNullable<PixelWindow['ttq']>, e: PixelEvent): void {
       ttq.track!('AddToCart', {
         contents: [content(e.variantId, e.quantity, e.priceMinor)],
         value: major(e.priceMinor * e.quantity),
-        currency: CURRENCY,
+        currency,
       });
       return;
     case 'begin_checkout':
       ttq.track!('InitiateCheckout', {
         value: major(e.valueMinor),
-        currency: CURRENCY,
+        currency,
       });
       return;
     case 'purchase':
@@ -554,7 +561,7 @@ function tiktok(ttq: NonNullable<PixelWindow['ttq']>, e: PixelEvent): void {
         {
           contents: e.items.map((i) => content(i.id, i.quantity, i.priceMinor)),
           value: major(e.valueMinor),
-          currency: CURRENCY,
+          currency,
         },
         { event_id: e.orderId },
       );
@@ -577,28 +584,28 @@ function google(
       return;
     case 'view_item':
       gtag('event', 'view_item', {
-        currency: CURRENCY,
+        currency,
         value: major(e.priceMinor),
         items: [item(itemOf(e).id, 1, e.priceMinor)],
       });
       return;
     case 'add_to_cart':
       gtag('event', 'add_to_cart', {
-        currency: CURRENCY,
+        currency,
         value: major(e.priceMinor * e.quantity),
         items: [item(e.variantId, e.quantity, e.priceMinor)],
       });
       return;
     case 'begin_checkout':
       gtag('event', 'begin_checkout', {
-        currency: CURRENCY,
+        currency,
         value: major(e.valueMinor),
       });
       return;
     case 'purchase':
       gtag('event', 'purchase', {
         transaction_id: e.orderId,
-        currency: CURRENCY,
+        currency,
         value: major(e.valueMinor),
         items: e.items.map((i) => item(i.id, i.quantity, i.priceMinor)),
       });
@@ -606,7 +613,7 @@ function google(
         gtag('event', 'conversion', {
           send_to: `${g.adsId}/${g.adsConversionLabel}`,
           value: major(e.valueMinor),
-          currency: CURRENCY,
+          currency,
           transaction_id: e.orderId,
         });
       }

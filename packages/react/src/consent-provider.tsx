@@ -28,7 +28,8 @@ export interface ConsentState {
   needed: boolean;
   /**
    * Opens the preferences panel; focus returns to `opener` (default: the
-   * focused element) on close.
+   * focused element) on close. When the opener is gone, focus moves to the
+   * element with id `main`.
    */
   open: (opener?: HTMLElement | null) => void;
   /** The store's cookies (necessary and optional). */
@@ -83,7 +84,14 @@ export interface ConsentProviderProps {
 /** `undefined` on the server and during hydration: the choice is unknown. */
 const serverSnapshot = () => undefined;
 
-/** Holds the shopper's cookie choice for the banner and the footer button. */
+/**
+ * Holds the shopper's cookie choice for the banner and the footer button.
+ *
+ * When the panel closes, focus returns to the element that opened it. When
+ * there is none (it was removed, or the decision was made in the bar),
+ * focus moves to the element with id `main`: give your main content
+ * `id="main"` and `tabIndex={-1}`.
+ */
 export function ConsentProvider({
   cookies,
   version,

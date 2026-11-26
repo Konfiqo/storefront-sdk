@@ -499,3 +499,46 @@ describe('pixel event ids follow the product feed rows', () => {
     ]);
   });
 });
+
+describe('pixel currency', () => {
+  const events = () => {
+    firePixel({ name: 'view_item', productId: 'p1', priceMinor: 1000 });
+    firePixel({
+      name: 'add_to_cart',
+      productId: 'p1',
+      variantId: 'v1',
+      priceMinor: 1000,
+      quantity: 1,
+    });
+    firePixel({ name: 'begin_checkout', valueMinor: 1000 });
+    firePixel({ ...PURCHASE, orderId: 'cur-' + Math.random() });
+  };
+
+  it('every platform event carries the configured currency', () => {
+    configurePixels(ALL, true, { currency: 'EUR' });
+    const { fbq, ttq, gtag } = spyGlobals();
+    events();
+    const meta = fbq.mock.calls.map((c) => c[2].currency);
+    const tt = ttq.track.mock.calls.map((c) => c[1].currency);
+    const g = gtag.mock.calls.map((c) => c[2].currency);
+    expect(meta).toEqual(['EUR', 'EUR', 'EUR', 'EUR']);
+    expect(tt).toEqual(['EUR', 'EUR', 'EUR', 'EUR']);
+    // view_item, add_to_cart, begin_checkout, purchase, ads conversion
+    expect(g).toEqual(['EUR', 'EUR', 'EUR', 'EUR', 'EUR']);
+  });
+
+  it('defaults to TRY', () => {
+    configurePixels(ALL, true);
+    const { fbq, ttq, gtag } = spyGlobals();
+    events();
+    expect(new Set(fbq.mock.calls.map((c) => c[2].currency))).toEqual(
+      new Set(['TRY']),
+    );
+    expect(new Set(ttq.track.mock.calls.map((c) => c[1].currency))).toEqual(
+      new Set(['TRY']),
+    );
+    expect(new Set(gtag.mock.calls.map((c) => c[2].currency))).toEqual(
+      new Set(['TRY']),
+    );
+  });
+});
