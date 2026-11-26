@@ -12,6 +12,15 @@ const pkg = JSON.parse(
   devDependencies?: Record<string, string>;
 };
 
+describe('exports', () => {
+  it('exposes the consent state and provider', async () => {
+    const mod = await import('./index');
+    expect(typeof mod.ConsentProvider).toBe('function');
+    expect(typeof mod.useConsent).toBe('function');
+    expect(mod.OPTIONAL_CATEGORIES).toEqual(['analytics', 'marketing']);
+  });
+});
+
 describe('package.json', () => {
   it('takes the SDK as a peer, so the app and this package share one copy', () => {
     expect(pkg.dependencies?.['@konfiqo/storefront-sdk']).toBeUndefined();

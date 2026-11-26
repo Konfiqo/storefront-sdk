@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { StorefrontClient } from '@konfiqo/storefront-sdk';
 import {
   CheckoutChallenge,
+  ConsentProvider,
   PaymentForm,
   StorefrontProvider,
   useCart,
@@ -12,6 +13,7 @@ import {
   useOrder,
   useProduct,
   useProducts,
+  useConsent,
   useStore,
 } from './index';
 import { mockClient } from './test-utils';
@@ -54,6 +56,33 @@ describe('server rendering (no window)', () => {
         if (fn !== client.media.url) expect(fn).not.toHaveBeenCalled();
       }
     }
+  });
+});
+
+describe('consent on the server', () => {
+  it('renders with the choice unknown and no bar', () => {
+    function Probe() {
+      const consent = useConsent();
+      return (
+        <p>{`${String(consent.needed)}|${String(consent.known)}|${String(consent.showBar)}`}</p>
+      );
+    }
+    const html = renderToString(
+      <ConsentProvider
+        cookies={[
+          {
+            name: '_vid',
+            category: 'analytics',
+            purpose: 'p',
+            durationDays: 1,
+          },
+        ]}
+        version="v1"
+      >
+        <Probe />
+      </ConsentProvider>,
+    );
+    expect(html).toContain('true|false|false');
   });
 });
 

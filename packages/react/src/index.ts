@@ -35,3 +35,11 @@ export type {
 } from './checkout-challenge';
 export { Content, renderContent } from './content';
 export type { ContentComponents, ContentProps } from './content';
+export { ConsentProvider, useConsent } from './consent-provider';
+export type { ConsentProviderProps, ConsentState } from './consent-provider';
+export { OPTIONAL_CATEGORIES } from './consent';
+export type {
+  ConsentRecord,
+  OptionalCookieCategory,
+  StoredConsent,
+} from './consent';
