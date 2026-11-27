@@ -63,12 +63,29 @@ export interface RequestCodeOptions extends RequestOptions {
   turnstileToken?: string;
 }
 
+/**
+ * The `agreementsHash` to send when re-opening payment on an `ordered` cart.
+ *
+ * On an `ordered` cart (the buyer already placed the order and payment is
+ * still pending), `carts.agreements` answers `cart_read_only`, so there is no
+ * fresh hash to send. Pass this value to `carts.checkout` instead: commerce
+ * re-opens the pending payment and does not read the hash on that path.
+ *
+ * If the old order was cancelled (for example, after a declined payment),
+ * commerce answers `agreements_changed` instead. Then call
+ * `carts.agreements` again, show the documents, ask the buyer to accept them,
+ * and check out with the new `agreementsHash`.
+ */
+export const REOPEN_AGREEMENTS_HASH = '0'.repeat(64);
+
 /** Options of `carts.checkout`. */
 export interface CheckoutOptions extends RequestOptions {
   /**
    * The `agreementsHash` of the {@link CartAgreements} the buyer was
    * shown (`carts.agreements`). Sent as the JSON body. Checkout refuses
    * with `agreements_changed` when the cart or a legal text changed since.
+   * To re-open payment on an `ordered` cart, pass
+   * {@link REOPEN_AGREEMENTS_HASH}.
    */
   agreementsHash: string;
   /**
@@ -219,7 +236,9 @@ export interface StorefrontClient {
      * and their hash. Show the documents, ask the buyer to accept them,
      * then pass the hash to `checkout`. Call it again after any change to
      * the cart. Refuses with `legal_not_confirmed` (the store takes no
-     * orders yet) or `cart_incomplete`.
+     * orders yet), `cart_incomplete`, or `cart_read_only` (the cart is
+     * ordered or expired; to re-open payment on an ordered cart, see
+     * {@link REOPEN_AGREEMENTS_HASH}).
      */
     agreements(
       cartId: string,
@@ -238,8 +257,14 @@ export interface StorefrontClient {
      * reset the widget after every call. Re-opening payment on an already
      * ordered cart needs no token.
      *
-     * `agreementsHash` is required (see `agreements`). On
-     * `agreements_changed`, load the agreements again and show them.
+     * `agreementsHash` is required: send the hash from `agreements` that
+     * the buyer accepted. On `agreements_changed`, load the agreements
+     * again, show them and ask the buyer to accept before checking out
+     * with the new hash. This also happens after a declined payment: the
+     * cart opens again and the next order gets a new number. To re-open
+     * payment on an
+     * `ordered` cart, where `agreements` answers `cart_read_only`, pass
+     * {@link REOPEN_AGREEMENTS_HASH}.
      */
     checkout(cartId: string, options: CheckoutOptions): Promise<CheckoutResult>;
   };

@@ -18,10 +18,10 @@ export interface CheckoutChallengeProps extends Omit<
    * Null / empty renders an empty `<div>` (the store has no challenge).
    */
   siteKey: string | null | undefined;
-  /** A token is ready: pass it to `checkout({ turnstileToken })`. */
+  /** A token is ready: pass it to `checkout({ agreementsHash, turnstileToken })`. */
   onToken: (token: string) => void;
   /**
-   * The current token can no longer be used — it expired, or a checkout
+   * The current token can no longer be used: it expired, or a checkout
    * consumed it and the widget was reset. Drop it; a new one follows.
    */
   onExpired?: () => void;

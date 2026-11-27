@@ -246,6 +246,7 @@ Turnstile token:
 ```tsx
 const { data: store } = useStore();
 const [token, setToken] = useState<string | null>(null);
+// agreementsHash: from client.carts.agreements(cartId), accepted by the buyer
 const { checkout } = useCheckout();
 
 <CheckoutChallenge
@@ -256,7 +257,7 @@ const { checkout } = useCheckout();
 />
 <button
   disabled={!!store?.checkoutChallenge && !token}
-  onClick={() => checkout({ turnstileToken: token })}
+  onClick={() => checkout({ agreementsHash, turnstileToken: token })}
 >
   {t('checkout.pay')}
 </button>

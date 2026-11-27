@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import {
   LEGAL_KEYS,
+  REOPEN_AGREEMENTS_HASH,
   createStorefrontClient,
   isStorefrontError,
   StorefrontError,
@@ -1321,5 +1322,19 @@ describe('checkout without a valid agreements hash', () => {
       issues: [{ path: 'agreementsHash', message: expect.any(String) }],
     });
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe('REOPEN_AGREEMENTS_HASH', () => {
+  it('is exported as 64 zeros and passes the client-side hash check', async () => {
+    expect(REOPEN_AGREEMENTS_HASH).toBe('0'.repeat(64));
+    const { client, calls } = setup();
+    await client.carts.checkout('c1', {
+      agreementsHash: REOPEN_AGREEMENTS_HASH,
+    });
+    expect(calls).toHaveLength(1);
+    expect(JSON.parse(calls[0]!.body!)).toEqual({
+      agreementsHash: REOPEN_AGREEMENTS_HASH,
+    });
   });
 });

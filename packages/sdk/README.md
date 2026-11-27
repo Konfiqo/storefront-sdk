@@ -355,7 +355,7 @@ try {
 | `too_many_lines`          | 400      |                                                                                                       | a cart holds at most 50 lines                                                                                                                                                 |
 | `line_not_found`          | 404      |                                                                                                       | no line with that id                                                                                                                                                          |
 | `invalid_shipping_option` | 400      |                                                                                                       | the option is not offered for this cart                                                                                                                                       |
-| `cart_read_only`          | 409      | `{ status: 'ordered' \| 'expired' }`                                                                  | the cart can no longer change: `expired` → start a new cart; `ordered` → check out again (re-opens payment) or show the order                                                 |
+| `cart_read_only`          | 409      | `{ status: 'ordered' \| 'expired' }`                                                                  | the cart can no longer change: `expired` → start a new cart; `ordered` → show the order, or re-open payment with `REOPEN_AGREEMENTS_HASH` (step 9)                            |
 | `checkout_in_progress`    | 409      |                                                                                                       | another checkout of this cart is running: retry in a few seconds                                                                                                              |
 | `checkout_incomplete`     | 400      | `{ missing: ('lines' \| 'customer' \| 'identityNumber' \| 'shippingAddress' \| 'shippingOption')[] }` | collect what is missing                                                                                                                                                       |
 | `legal_not_confirmed`     | 409      |                                                                                                       | the store has not confirmed its legal texts and takes no orders yet: show a clear "not taking orders" message                                                                 |
@@ -678,13 +678,24 @@ the ad-pixel loader that use them.
 
 9. **Failed payments.** A declined, failed or expired payment cancels the
    order, but the cart is **not** lost: the next `carts.get` or
-   `carts.checkout` reopens it (`status: 'open'`) and checkout places a new
-   order (new `orderId`, new `token`) with the same lines, buyer and
-   addresses. The buyer re-enters nothing, including the identity number,
-   which stays sealed on the cart until the order is paid or the cart
-   expires. Calling checkout on an `ordered` cart whose payment is still
-   pending re-opens the same payment (no new order). Stock is reserved for
-   a pending order for up to 24 h.
+   `carts.checkout` reopens it (`status: 'open'`). The buyer re-enters
+   nothing, including the identity number, which stays sealed on the cart
+   until the order is paid or the cart expires. The new order gets a new
+   order number, so the agreements the buyer accepted no longer match:
+   checkout answers `agreements_changed`. Call `carts.agreements(cartId)`
+   again, show the documents, ask the buyer to accept them, and check out
+   with the new `agreementsHash`. That checkout places a new order (new
+   `orderId`, new `token`) with the same lines, buyer and addresses.
+
+   **Re-opening a pending payment.** On an `ordered` cart whose payment is
+   still pending, `carts.agreements` answers `cart_read_only`, so there is
+   no new hash. Call
+   `carts.checkout(cartId, { agreementsHash: REOPEN_AGREEMENTS_HASH })`
+   (exported by this package). Commerce re-opens the same payment (no new
+   order) and does not read the hash on this path. If the old order was
+   cancelled in the meantime, checkout answers `agreements_changed`:
+   handle it as above. Stock is reserved for a pending order for up to
+   24 h.
 
 10. **Secrets.** The publishable key is the only key that belongs in client
     code. The tenant API key, the operator key and the trusted storefront

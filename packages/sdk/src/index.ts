@@ -3,6 +3,7 @@ export const SDK_VERSION = '0.7.0';
 
 export {
   createStorefrontClient,
+  REOPEN_AGREEMENTS_HASH,
   DEFAULT_TIMEOUT_MS,
   PUBLISHABLE_KEY_HEADER,
   STOREFRONT_KEY_HEADER,

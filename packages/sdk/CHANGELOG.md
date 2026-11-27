@@ -12,6 +12,11 @@
 - New `carts.agreements(cartId)`: the order documents filled in for the
   cart plus their hash (`CartAgreements`, `LegalDocument`). Show them,
   then pass the hash to checkout.
+- New `REOPEN_AGREEMENTS_HASH`: pass it to `carts.checkout` to re-open a
+  pending payment on an `ordered` cart, where `carts.agreements` answers
+  `cart_read_only`. After a declined payment, checkout answers
+  `agreements_changed`; load the agreements again and ask the buyer to
+  accept them.
 - `Order.agreements` holds the documents the buyer accepted.
 - `Store.company` (`StoreCompany`): title, address, tax office, tax number,
   MERSIS number and KEP address.
