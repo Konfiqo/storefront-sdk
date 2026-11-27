@@ -382,8 +382,9 @@ export function Tracking({
   `product_group`. Prices are in minor units, in the `currency` given to
   `AdPixelsLoader` (ISO 4217, default `'TRY'`). Events fired before the
   shopper's choice is read (for example from a mount effect during
-  hydration) are held, up to 20, and sent once the pixels are configured
-  with a `marketing` grant. Without that grant they are dropped.
+  hydration) are held, up to 20. The first configuration sends them if it carries a
+  `marketing` grant; otherwise they are dropped, and a later grant does
+  not send them.
 - **Which pixels and cookies a host may use.** On a default store domain,
   filter with the SDK's `onDefaultDomain`, `pixelsForHost` and
   `cookiesForHost`. They are server-safe, so call them in server
