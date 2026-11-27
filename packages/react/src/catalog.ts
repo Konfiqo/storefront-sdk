@@ -8,7 +8,7 @@ import type {
 import { useStorefrontContext } from './provider';
 import { useResource, type ResourceResult } from './use-resource';
 
-/** The store (`store.get()`): name, currency, theme, legal texts, checkout challenge. */
+/** The store (`store.get()`): name, currency, theme, company details, checkout challenge. */
 export function useStore(): ResourceResult<Store> {
   const { client } = useStorefrontContext();
   return useResource('store', client, (signal) => client.store.get({ signal }));

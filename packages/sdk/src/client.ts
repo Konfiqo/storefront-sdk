@@ -7,6 +7,7 @@ import type {
   AccountSession,
   Cart,
   CategoryList,
+  CartAgreements,
   CheckoutResult,
   CustomerInput,
   Order,
@@ -64,6 +65,12 @@ export interface RequestCodeOptions extends RequestOptions {
 
 /** Options of `carts.checkout`. */
 export interface CheckoutOptions extends RequestOptions {
+  /**
+   * The `agreementsHash` of the {@link CartAgreements} the buyer was
+   * shown (`carts.agreements`). Sent as the JSON body. Checkout refuses
+   * with `agreements_changed` when the cart or a legal text changed since.
+   */
+  agreementsHash: string;
   /**
    * The checkout challenge token (Cloudflare Turnstile), required when
    * `store.checkoutChallenge` is set. Single-use: get a new one (reset the
@@ -127,7 +134,7 @@ export interface StorefrontClient {
   getContent(key: string, options?: RequestOptions): Promise<StoreContent>;
   /** Store information. */
   readonly store: {
-    /** `GET /v1/store`: name, language, currency, logo, theme, contact, legal texts, shipping rules. */
+    /** `GET /v1/store`: name, language, currency, logo, theme, contact, company details, shipping rules. */
     get(options?: RequestOptions): Promise<Store>;
   };
   /** Categories. */
@@ -207,6 +214,18 @@ export interface StorefrontClient {
       options?: RequestOptions,
     ): Promise<Cart>;
     /**
+     * `POST /v1/carts/:id/agreements`: the order documents (preliminary
+     * information and distance sales agreement) filled in with this cart,
+     * and their hash. Show the documents, ask the buyer to accept them,
+     * then pass the hash to `checkout`. Call it again after any change to
+     * the cart. Refuses with `legal_not_confirmed` (the store takes no
+     * orders yet) or `cart_incomplete`.
+     */
+    agreements(
+      cartId: string,
+      options?: RequestOptions,
+    ): Promise<CartAgreements>;
+    /**
      * `POST /v1/carts/:id/checkout`: places the order (or re-opens payment
      * for the cart's order) and answers how to present payment. Keep the
      * returned `token`: it is returned only once. Not retried.
@@ -218,11 +237,11 @@ export interface StorefrontClient {
      * `turnstileToken` (see `renderTurnstile`); tokens are single-use, so
      * reset the widget after every call. Re-opening payment on an already
      * ordered cart needs no token.
+     *
+     * `agreementsHash` is required (see `agreements`). On
+     * `agreements_changed`, load the agreements again and show them.
      */
-    checkout(
-      cartId: string,
-      options?: CheckoutOptions,
-    ): Promise<CheckoutResult>;
+    checkout(cartId: string, options: CheckoutOptions): Promise<CheckoutResult>;
   };
   /** Buyer order status. */
   readonly orders: {
@@ -558,13 +577,20 @@ export function createStorefrontClient(
           { id: optionId },
           o,
         ),
+      agreements: (cartId, o) =>
+        request<CartAgreements>(
+          'POST',
+          () => `${cart(cartId)}/agreements`,
+          undefined,
+          o,
+        ),
       checkout: (cartId, o) =>
         request<CheckoutResult>(
           'POST',
           () => `${cart(cartId)}/checkout`,
-          undefined,
+          { agreementsHash: o.agreementsHash },
           o,
-          o?.turnstileToken
+          o.turnstileToken
             ? { [TURNSTILE_TOKEN_HEADER]: o.turnstileToken }
             : {},
         ),

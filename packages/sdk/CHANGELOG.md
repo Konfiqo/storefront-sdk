@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.7.0
+
+- **Breaking:** `Store.legal` (and `StoreLegal`) is removed. Legal texts
+  come from `getContent(key)` with the keys in the new `LEGAL_KEYS`
+  (`legal.kvkk`, `legal.privacy`, `legal.preliminary-information`,
+  `legal.distance-sales`, `legal.returns`, `legal.cookies`; type
+  `LegalKey`).
+- **Breaking:** `carts.checkout` requires `agreementsHash` and sends it as
+  the JSON body `{ agreementsHash }`.
+- New `carts.agreements(cartId)`: the order documents filled in for the
+  cart plus their hash (`CartAgreements`, `LegalDocument`). Show them,
+  then pass the hash to checkout.
+- `Order.agreements` holds the documents the buyer accepted.
+- `Store.company` (`StoreCompany`): title, address, tax office, tax number,
+  MERSIS number and KEP address.
+- New error codes `legal_not_confirmed`, `agreements_changed` and
+  `cart_incomplete` (all 409).
+- Released together with `@konfiqo/storefront-react` 0.7.0.
+
 ## 0.6.2
 
 - `SDK_VERSION` is `'0.6.2'`; nothing else changed. Released together

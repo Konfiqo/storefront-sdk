@@ -15,6 +15,8 @@ import {
   wrapper,
 } from './test-utils';
 
+const HASH = 'b'.repeat(64);
+
 type Win = Window & { turnstile?: TurnstileApi };
 const win = window as Win;
 let fake: {
@@ -120,11 +122,16 @@ describe('CheckoutChallenge', () => {
     await flush();
     expect(fake.reset).not.toHaveBeenCalled();
     await act(async () => {
-      await result.current.checkout({ turnstileToken: 't1' }).catch(() => {});
+      await result.current
+        .checkout({ agreementsHash: HASH, turnstileToken: 't1' })
+        .catch(() => {});
     });
     expect(fake.reset).toHaveBeenCalledTimes(1);
     await act(async () => {
-      await result.current.checkout({ turnstileToken: 't2' });
+      await result.current.checkout({
+        agreementsHash: HASH,
+        turnstileToken: 't2',
+      });
     });
     expect(fake.reset).toHaveBeenCalledTimes(2);
     expect(onExpired).toHaveBeenCalledTimes(2);

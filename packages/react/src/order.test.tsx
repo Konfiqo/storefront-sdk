@@ -18,6 +18,7 @@ const order = (patch: Partial<Order> = {}): Order => ({
   billingAddress: null,
   lines: [],
   shipments: [],
+  agreements: [],
   ...patch,
 });
 

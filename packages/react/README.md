@@ -11,7 +11,7 @@ the payment form and the checkout challenge.
   "build your own storefront" guide.
 - No styling: components render a plain `<div>` you can give a `className`.
 - No runtime dependencies. Peer dependencies: `@konfiqo/storefront-sdk`
-  `^0.6.2` and `react` ≥ 18. Install the SDK yourself, so your code and this
+  `^0.7.0` and `react` ≥ 18. Install the SDK yourself, so your code and this
   package share one copy (`isStorefrontError` also recognises errors from a
   second copy, but one copy keeps the bundle small).
 - Server-rendering safe: nothing touches `window`, `document` or storage
@@ -61,7 +61,7 @@ read, and a stale answer never replaces a newer one.
 
 | Hook                  | SDK call                | Notes                                                                                          |
 | --------------------- | ----------------------- | ---------------------------------------------------------------------------------------------- |
-| `useStore()`          | `store.get()`           | Currency, theme, legal texts, `checkoutChallenge`.                                             |
+| `useStore()`          | `store.get()`           | Currency, theme, `company`, `checkoutChallenge`.                                               |
 | `useCategories()`     | `categories.list()`     | The category tree.                                                                             |
 | `useProducts(params)` | `products.list(params)` | `{ category?, q?, page?, pageSize? }`. Reads again when a value changes (not on a new object). |
 | `useProduct(slug)`    | `products.get(slug)`    | `null` / empty slug: reads nothing. Unknown slug: `error.code === 'product_not_found'`.        |
@@ -165,10 +165,15 @@ const {
 ```tsx
 const { checkout, isPending, result, error, attempts, reset } = useCheckout();
 
-const result = await checkout({ turnstileToken }); // CheckoutResult
+const result = await checkout({ agreementsHash, turnstileToken }); // CheckoutResult
 ```
 
-- Calls `carts.checkout(cartId, { turnstileToken })` for the provider's cart.
+- Calls `carts.checkout(cartId, { agreementsHash, turnstileToken })` for the
+  provider's cart. `agreementsHash` is required: load the agreements with
+  `client.carts.agreements(cartId)`, show them, and pass the hash. On
+  `agreements_changed`, load them again, show the new texts and call
+  `checkout()` with the new hash (see "Legal texts and agreements" in the
+  SDK README).
   Without a cart it rejects with `checkout_incomplete`
   (`details.missing: ['lines']`) without a request. A second call while one
   is in flight returns the same promise.
@@ -192,6 +197,8 @@ const result = await checkout({ turnstileToken }); // CheckoutResult
         break;
       case 'out_of_stock': // error.details.variantIds
       case 'checkout_incomplete': // error.details.missing
+      case 'agreements_changed': // load the agreements again, show them
+      case 'legal_not_confirmed': // the store takes no orders yet
       case 'invalid_buyer_details': // error.details.field
       case 'checkout_in_progress':
       case 'challenge_required':

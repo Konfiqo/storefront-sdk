@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.7.0
+
+- **Breaking:** `useCheckout().checkout()` requires `{ agreementsHash }`
+  and passes it to `carts.checkout`. Load the agreements with
+  `client.carts.agreements(cartId)`, show them, then check out with the
+  hash; on `agreements_changed`, load them again.
+- **Breaking:** the SDK's `Store.legal` is removed (see the SDK changelog);
+  `useStore()` now returns `company`. Requires `@konfiqo/storefront-sdk`
+  `^0.7.0`.
+
 ## 0.6.2
 
 - Pixels loaded on an earlier page no longer send a secret from a later one.

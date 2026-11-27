@@ -1,14 +1,23 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
 import {
+  LEGAL_KEYS,
   createStorefrontClient,
   isStorefrontError,
   StorefrontError,
   type AnyStorefrontError,
+  type CartAgreements,
+  type CheckoutOptions,
+  type LegalDocument,
+  type LegalKey,
+  type Order,
+  type Store,
+  type StoreCompany,
   type StorefrontClientOptions,
 } from './index';
 
 const BASE = 'https://api.example.test';
 const PK = 'pk_live_abc';
+const HASH = 'a'.repeat(64);
 
 interface Call {
   url: string;
@@ -220,9 +229,16 @@ describe('routes', () => {
     },
     {
       name: 'carts.checkout',
-      call: (c) => c.carts.checkout('c1'),
+      call: (c) => c.carts.checkout('c1', { agreementsHash: HASH }),
       method: 'POST',
       path: '/v1/carts/c1/checkout',
+      body: { agreementsHash: HASH },
+    },
+    {
+      name: 'carts.agreements',
+      call: (c) => c.carts.agreements('c1'),
+      method: 'POST',
+      path: '/v1/carts/c1/agreements',
     },
     {
       name: 'orders.get',
@@ -285,7 +301,7 @@ describe('routes', () => {
     ];
     for (const r of results) {
       const { client } = setup(() => json(200, r));
-      const out = await client.carts.checkout('c1');
+      const out = await client.carts.checkout('c1', { agreementsHash: HASH });
       switch (out.presentation) {
         case 'embedded':
           expect(out.embed.kind).toBe('iyzico-checkout-form');
@@ -332,7 +348,7 @@ describe('trusted storefront key', () => {
       trustedStorefrontKey: 'sk_trusted',
       buyerIp: ' 203.0.113.9 ',
     });
-    await client.carts.checkout('c1');
+    await client.carts.checkout('c1', { agreementsHash: HASH });
     expect(calls[0]!.headers).toMatchObject({
       'x-konfiqo-publishable-key': PK,
       'x-konfiqo-storefront-key': 'sk_trusted',
@@ -384,7 +400,7 @@ describe('server key', () => {
       serverKey: 'sk_store',
       buyerIp: ' 203.0.113.9 ',
     });
-    await client.carts.checkout('c1');
+    await client.carts.checkout('c1', { agreementsHash: HASH });
     expect(calls[0]!.headers).toMatchObject({
       'x-konfiqo-publishable-key': PK,
       'x-konfiqo-server-key': 'sk_store',
@@ -556,6 +572,9 @@ describe('errors', () => {
       details: { status: 'expired' },
     },
     { error: 'checkout_in_progress', status: 409 },
+    { error: 'legal_not_confirmed', status: 409 },
+    { error: 'agreements_changed', status: 409 },
+    { error: 'cart_incomplete', status: 409 },
     {
       error: 'checkout_incomplete',
       status: 400,
@@ -621,7 +640,9 @@ describe('errors', () => {
           ...extra,
         }),
       );
-      const e = await rejection(client.carts.checkout('c1'));
+      const e = await rejection(
+        client.carts.checkout('c1', { agreementsHash: HASH }),
+      );
       expect(e).toBeInstanceOf(StorefrontError);
       expect(e).toBeInstanceOf(Error);
       expect(e.name).toBe('StorefrontError');
@@ -641,7 +662,9 @@ describe('errors', () => {
         variantIds: ['v9'],
       }),
     );
-    const e = await rejection(client.carts.checkout('c1'));
+    const e = await rejection(
+      client.carts.checkout('c1', { agreementsHash: HASH }),
+    );
     switch (e.code) {
       case 'out_of_stock': {
         const ids: string[] = e.details.variantIds;
@@ -677,7 +700,9 @@ describe('errors', () => {
         { 'retry-after': '42' },
       ),
     );
-    const e = await rejection(client.carts.checkout('c1'));
+    const e = await rejection(
+      client.carts.checkout('c1', { agreementsHash: HASH }),
+    );
     expect(e.code).toBe('rate_limited');
     expect(e.status).toBe(429);
     expect(e.details).toEqual({ retryAfter: 42 });
@@ -779,7 +804,7 @@ describe('errors', () => {
         message: 'm',
       }),
     );
-    await rejection(client.carts.checkout('c1'));
+    await rejection(client.carts.checkout('c1', { agreementsHash: HASH }));
     expect(fetchMock).toHaveBeenCalledOnce();
   });
 });
@@ -902,11 +927,12 @@ describe('per-call signal', () => {
       { shipping: { district: 'd', city: 'c', line1: 'l', country: 'TR' } },
       o,
     );
+    await client.carts.agreements('c', o);
     await client.carts.shippingOptions('c', o);
     await client.carts.setShippingOption('c', 'standard', o);
-    await client.carts.checkout('c', o);
+    await client.carts.checkout('c', { agreementsHash: HASH, ...o });
     await client.orders.get('o', 't', o);
-    expect(calls).toHaveLength(16);
+    expect(calls).toHaveLength(17);
   });
 
   it('still times out when the caller signal never fires', async () => {
@@ -935,7 +961,8 @@ describe('path segments', () => {
       client.carts.addLine(v, { variantId: 'v', quantity: 1 }),
       client.carts.updateLine('c', v, { quantity: 1 }),
       client.carts.removeLine('c', v),
-      client.carts.checkout(v),
+      client.carts.checkout(v, { agreementsHash: HASH }),
+      client.carts.agreements(v),
       client.orders.get(v, 't'),
     ];
     for (const p of calls)
@@ -993,14 +1020,20 @@ describe('trusted key guard: other browser-like hosts', () => {
 describe('checkout challenge', () => {
   it('sends the turnstile token on checkout only', async () => {
     const { client, calls } = setup();
-    await client.carts.checkout('c1', { turnstileToken: 'tok-1' });
-    await client.carts.checkout('c1');
-    await client.carts.checkout('c1', { turnstileToken: '' });
+    await client.carts.checkout('c1', {
+      agreementsHash: HASH,
+      turnstileToken: 'tok-1',
+    });
+    await client.carts.checkout('c1', { agreementsHash: HASH });
+    await client.carts.checkout('c1', {
+      agreementsHash: HASH,
+      turnstileToken: '',
+    });
     expect(calls[0]!.headers['x-konfiqo-turnstile-token']).toBe('tok-1');
     expect(calls[1]!.headers).not.toHaveProperty('x-konfiqo-turnstile-token');
     expect(calls[2]!.headers).not.toHaveProperty('x-konfiqo-turnstile-token');
     expect(calls[0]!.headers['x-konfiqo-publishable-key']).toBe(PK);
-    expect(calls[0]!.body).toBeUndefined();
+    expect(JSON.parse(calls[0]!.body!)).toEqual({ agreementsHash: HASH });
   });
 
   it('types store.checkoutChallenge', async () => {
@@ -1028,7 +1061,10 @@ describe('checkout challenge', () => {
       ),
     );
     const e = await rejection(
-      client.carts.checkout('c1', { turnstileToken: 't' }),
+      client.carts.checkout('c1', {
+        agreementsHash: HASH,
+        turnstileToken: 't',
+      }),
     );
     expect(e.code).toBe(error);
     expect(e.status).toBe(status);
@@ -1208,5 +1244,55 @@ describe('account and cart recovery', () => {
     const { client, calls } = setup(() => json(200, { email: 'a@b.co' }));
     await client.account.get();
     expect(calls[0]?.headers.cookie).toBeUndefined();
+  });
+});
+
+describe('legal documents and agreements', () => {
+  it('returns the agreements of the cart as sent', async () => {
+    const body = {
+      orderNumber: 'S-1001',
+      documents: [
+        { key: 'legal.preliminary-information', title: 'Info', tree: 'x' },
+      ],
+      agreementsHash: HASH,
+    };
+    const { client } = setup(() => json(200, body));
+    const out = await client.carts.agreements('c1');
+    expect(out).toEqual(body);
+    expectTypeOf(out).toEqualTypeOf<CartAgreements>();
+  });
+
+  it('fetches a legal text with getContent and a LEGAL_KEYS entry', async () => {
+    const { client, calls } = setup(() =>
+      json(200, { key: 'legal.kvkk', title: 'KVKK', tree: 'x' }),
+    );
+    await client.getContent(LEGAL_KEYS[0]);
+    expect(calls[0]!.url).toBe(`${BASE}/v1/content/legal.kvkk`);
+  });
+
+  it('lists the six legal keys', () => {
+    expect([...LEGAL_KEYS]).toEqual([
+      'legal.kvkk',
+      'legal.privacy',
+      'legal.preliminary-information',
+      'legal.distance-sales',
+      'legal.returns',
+      'legal.cookies',
+    ]);
+    expectTypeOf<LegalKey>().toEqualTypeOf<(typeof LEGAL_KEYS)[number]>();
+  });
+
+  it('has no Store.legal and types Store.company', () => {
+    expectTypeOf<Store>().not.toHaveProperty('legal');
+    expectTypeOf<Store['company']>().toEqualTypeOf<StoreCompany>();
+    expectTypeOf<StoreCompany['taxNumber']>().toEqualTypeOf<string | null>();
+  });
+
+  it('types Order.agreements', () => {
+    expectTypeOf<Order['agreements']>().toEqualTypeOf<LegalDocument[]>();
+  });
+
+  it('requires the agreements hash at checkout', () => {
+    expectTypeOf<CheckoutOptions['agreementsHash']>().toEqualTypeOf<string>();
   });
 });

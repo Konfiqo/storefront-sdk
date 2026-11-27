@@ -1,5 +1,5 @@
 /** Version of the Storefront SDK package. */
-export const SDK_VERSION = '0.6.2';
+export const SDK_VERSION = '0.7.0';
 
 export {
   createStorefrontClient,
@@ -16,6 +16,8 @@ export type {
   StorefrontClient,
   StorefrontClientOptions,
 } from './client';
+export { LEGAL_KEYS } from './legal';
+export type { LegalKey } from './legal';
 export { StorefrontError, isStorefrontError } from './errors';
 export type {
   AnyStorefrontError,

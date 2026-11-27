@@ -41,6 +41,7 @@ export function mockClient(): MockClient {
       setAddress: fail(),
       shippingOptions: fail(),
       setShippingOption: fail(),
+      agreements: fail(),
       checkout: fail(),
       recover: fail(),
     },

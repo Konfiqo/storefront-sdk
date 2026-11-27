@@ -88,6 +88,12 @@ export type StorefrontApiErrorCode =
   | 'cart_read_only'
   | 'checkout_in_progress'
   | 'checkout_incomplete'
+  // 409: the store has not confirmed its legal texts yet (no orders).
+  | 'legal_not_confirmed'
+  // 409: the cart or a legal text changed since `carts.agreements`: load them again.
+  | 'agreements_changed'
+  // 409: the cart lacks lines, customer or address, so there is nothing to agree to.
+  | 'cart_incomplete'
   | 'cart_changed'
   | 'invalid_personalization'
   | 'out_of_stock'
@@ -162,6 +168,9 @@ const API_CODES: ReadonlySet<string> = new Set<StorefrontApiErrorCode>([
   'cart_read_only',
   'checkout_in_progress',
   'checkout_incomplete',
+  'legal_not_confirmed',
+  'agreements_changed',
+  'cart_incomplete',
   'cart_changed',
   'invalid_personalization',
   'out_of_stock',
