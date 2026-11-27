@@ -134,6 +134,9 @@ function loadMeta(id: string): void {
   // `firePixel` (none on pages whose URL carries a buyer secret).
   (w.fbq as unknown as { disablePushState?: boolean }).disablePushState = true;
   addScript('https://connect.facebook.net/en_US/fbevents.js');
+  // No automatic button-click or page-metadata events: they carry the page
+  // URL, which can hold a buyer secret on a later page.
+  w.fbq('set', 'autoConfig', false, id);
   w.fbq('init', id);
 }
 
@@ -221,6 +224,7 @@ function loadGoogle(g: NonNullable<AdPixels['google']>): void {
     w.gtag('config', id, {
       send_page_view: false,
       cookie_domain: cookieDomain,
+      page_location: scrubbedLocation(),
     });
   }
 }
@@ -240,6 +244,22 @@ export function onSecretPage(
   path: string = typeof location === 'undefined' ? '' : location.pathname,
 ): boolean {
   return path.startsWith('/orders/') || path.startsWith('/cart/recover');
+}
+
+/**
+ * The current page URL as the platforms may see it: the `token` query
+ * parameter removed always, and the whole query string and fragment removed
+ * on a page where {@link onSecretPage} is true.
+ */
+export function scrubbedLocation(): string {
+  const url = new URL(location.href);
+  if (onSecretPage(url.pathname)) {
+    url.search = '';
+    url.hash = '';
+  } else {
+    url.searchParams.delete('token');
+  }
+  return url.toString();
 }
 
 /** Loads each enabled platform's script once, on the first grant. */
@@ -459,6 +479,16 @@ function markPurchased(orderId: string): void {
   }
 }
 
+/** A copy of `e`, so later changes by the caller do not alter a held event. */
+function copyEvent(e: PixelEvent): PixelEvent {
+  try {
+    return structuredClone(e);
+  } catch {
+    // `structuredClone` is missing or refused the value: copy one level.
+    return { ...e };
+  }
+}
+
 /**
  * Reports `e` to every enabled platform; a no-op without a grant. Before
  * the page's first `configurePixels`, the newest 20 events are held for it.
@@ -467,7 +497,7 @@ export function firePixel(e: PixelEvent): void {
   if (!configured) {
     // Nothing is held on the server (module state is shared by requests).
     if (typeof window === 'undefined' || onSecretPage()) return;
-    early.push(e);
+    early.push(copyEvent(e));
     if (early.length > MAX_EARLY) early.shift();
     return;
   }
@@ -610,7 +640,7 @@ function google(
   });
   switch (e.name) {
     case 'page_view':
-      gtag('event', 'page_view');
+      gtag('event', 'page_view', { page_location: scrubbedLocation() });
       return;
     case 'view_item':
       gtag('event', 'view_item', {

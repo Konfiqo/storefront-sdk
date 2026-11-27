@@ -11,7 +11,7 @@ the payment form and the checkout challenge.
   "build your own storefront" guide.
 - No styling: components render a plain `<div>` you can give a `className`.
 - No runtime dependencies. Peer dependencies: `@konfiqo/storefront-sdk`
-  `^0.6.1` and `react` ≥ 18. Install the SDK yourself, so your code and this
+  `^0.6.2` and `react` ≥ 18. Install the SDK yourself, so your code and this
   package share one copy (`isStorefrontError` also recognises errors from a
   second copy, but one copy keeps the bundle small).
 - Server-rendering safe: nothing touches `window`, `document` or storage
@@ -84,11 +84,11 @@ components.
 
 ```tsx
 const {
-  cart, // Cart | null — the server's view; null until the buyer has one
+  cart, // Cart | null. The server's view; null until the buyer has one
   status, // 'idle' (before the first read, and on the server) | 'loading' | 'ready'
   isUpdating, // a write is in progress
   error, // the last read / write error, or null
-  previousCartId, // string | null — an ordered cart a write moved away from (see below)
+  previousCartId, // string | null. An ordered cart a write moved away from (see below)
   itemCount, // total units (for a badge)
   addLine, // ({ variantId, quantity, personalization? }) => Promise<Cart>
   updateLine, // (lineId, { quantity }) => Promise<Cart>, lineId = cart line `id`
@@ -97,8 +97,8 @@ const {
   setAddress, // ({ shipping, billing? }) => Promise<Cart>
   setShippingOption, // (optionId) => Promise<Cart>
   shippingOptions, // (options?) => Promise<ShippingOptionList>, { items: [] } without a cart
-  refresh, // () => Promise<void> — read the cart again
-  reset, // () => void — forget the cart (e.g. after its order is paid)
+  refresh, // () => Promise<void>. Reads the cart again
+  reset, // () => void. Forgets the cart (e.g. after its order is paid)
 } = useCart();
 ```
 
@@ -144,7 +144,7 @@ const {
 
 ## Cart storage
 
-- **`defaultCartStorage()`** — the provider's default storage (null on a
+- **`defaultCartStorage()`**, the provider's default storage (null on a
   server). `getItem` reads the `__Host-konfiqo_cart` cookie first and
   rewrites it on every read, renewing its expiry; when the cookie is gone
   (Safari keeps script-written cookies 7 days) it reads `localStorage` and
@@ -152,7 +152,7 @@ const {
   clears both and writes a `storefront:cart:<storeId>:cleared` tombstone in
   `localStorage`; while it is there no frontend on the store origin restores
   the old id from `localStorage`. The next `setItem` removes it.
-- **`useCartStorage()`** — a getter for the storage this provider uses
+- **`useCartStorage()`**, a getter for the storage this provider uses
   (call it in an effect or handler, never during render). Use it to save a
   cart id learned out of band (`saveCartId(getStorage(), storeId, id)`) or
   to clear one (`clearCartId(getStorage(), storeId)`).
@@ -219,7 +219,7 @@ const result = await checkout({ turnstileToken }); // CheckoutResult
 ```
 
 Presents payment with the SDK's `mountPayment`: the provider's embedded
-form inside the `<div>` (its scripts run once — also under React Strict
+form inside the `<div>` (its scripts run once, also under React Strict
 Mode, which mounts effects twice), a top-level redirect (`redirect`), or
 `onClosed(page)` (`closed`: `paid`, `cancelled`, `processing`, …). The form
 is removed on unmount.
@@ -229,7 +229,7 @@ is removed on unmount.
   or storage: the embedded content runs as script.
 - Card data goes from the provider's form to the provider; it never
   touches your code. Never put a Konfiqo secret (a storefront key, an API
-  key) in client code — the browser only ever needs the publishable key.
+  key) in client code; the browser only ever needs the publishable key.
 
 ## `<CheckoutChallenge>`
 
@@ -290,12 +290,12 @@ const { order, error, isLoading, isPolling, refetch } = useOrder(id, token, {
 
 - Reads `orders.get(orderId, token)`. Missing `orderId` or `token`: reads
   nothing.
-- `pollUntilFinal`: reads again with backoff — 2 s, 4 s, 8 s, then every
-  15 s — until the order is settled (`isOrderSettled`): any status past
+- `pollUntilFinal`: reads again with backoff, 2 s, 4 s, 8 s, then every
+  15 s, until the order is settled (`isOrderSettled`): any status past
   `pendingPayment` (`paid`, `fulfilling`, `shipped`, `delivered`,
   `cancelled`, `refunded`, …), or a pending order whose payment `failed` /
   `expired` (the buyer checks out again). Transient errors
-  (`network_error`, `timeout`, `rate_limited` — honouring `retryAfter` —,
+  (`network_error`, `timeout`, `rate_limited` (honouring `retryAfter`),
   `order_unavailable`, `http_error`) keep polling and keep the last
   `order`; other errors (`order_not_found`) stop it. Unmounting stops
   polling and aborts the read.
@@ -382,9 +382,10 @@ export function Tracking({
   `product_group`. Prices are in minor units, in the `currency` given to
   `AdPixelsLoader` (ISO 4217, default `'TRY'`). Events fired before the
   shopper's choice is read (for example from a mount effect during
-  hydration) are held, up to 20. The first configuration sends them if it carries a
-  `marketing` grant; otherwise they are dropped, and a later grant does
-  not send them.
+  hydration) are held, up to 20. They are copied when held, so later
+  changes to the object you passed do not alter them. The first
+  configuration sends them if it carries a `marketing` grant; otherwise
+  they are dropped, and a later grant does not send them.
 - **Which pixels and cookies a host may use.** On a default store domain,
   filter with the SDK's `onDefaultDomain`, `pixelsForHost` and
   `cookiesForHost`. They are server-safe, so call them in server
@@ -402,6 +403,13 @@ export function Tracking({
   change: pixel scripts already loaded on the previous page read the full
   URL (GA4 history page views, Meta automatic events) and would send the
   secret.
+- **Hardening for pixels loaded on an earlier page.** Meta is loaded with
+  `fbq('set', 'autoConfig', false, pixelId)` before `fbq('init', pixelId)`,
+  so Meta sends no automatic button-click or page-metadata events. Every
+  Google `config` call and every Google `page_view` the SDK sends carries
+  an explicit `page_location`: the URL with the `token` query parameter
+  removed, and with the whole query string and fragment removed on the
+  secret pages above. `scrubbedLocation()` returns that URL.
 - **Tests.** `resetAnalytics()` and `resetPixels()` forget the module
   state between tests. They are for tests only; do not call them in
   production code.

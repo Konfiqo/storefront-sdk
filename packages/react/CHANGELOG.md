@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.6.2
+
+- Pixels loaded on an earlier page no longer send a secret from a later one.
+  Meta is loaded with `autoConfig` off, so it sends no automatic button or
+  metadata events. Every Google `config` call and `page_view` carries a
+  `page_location` without the `token` query parameter, and without any
+  query string or fragment on order-status and cart-recovery pages. The new
+  `scrubbedLocation()` returns that URL.
+- `firePixel` copies an event it holds before the first `configurePixels`,
+  so changing the object afterwards does not change what is sent.
+- `ConsentProvider` no longer writes to a ref during render; behaviour is
+  unchanged.
+- Documentation: typo and wording fixes, and no em dashes in the READMEs.
+  Requires `@konfiqo/storefront-sdk` `^0.6.2`.
+
 ## 0.6.1
 
 - `firePixel` holds events fired before the page's first `configurePixels`

@@ -3,6 +3,7 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useInsertionEffect,
   useMemo,
   useRef,
   useState,
@@ -111,7 +112,11 @@ export function ConsentProvider({
   const opener = useRef<HTMLElement | null>(null);
   // Read at decision time, so a new callback each render changes nothing.
   const onDecisionRef = useRef(onDecision);
-  onDecisionRef.current = onDecision;
+  // Written in an insertion effect, which runs before any layout effect or
+  // event handler of the commit, so render stays free of side effects.
+  useInsertionEffect(() => {
+    onDecisionRef.current = onDecision;
+  });
 
   const categories = useMemo(
     () =>

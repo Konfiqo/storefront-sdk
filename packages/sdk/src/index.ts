@@ -1,5 +1,5 @@
 /** Version of the Storefront SDK package. */
-export const SDK_VERSION = '0.6.1';
+export const SDK_VERSION = '0.6.2';
 
 export {
   createStorefrontClient,
