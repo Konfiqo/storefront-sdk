@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 assert.equal(typeof window, 'undefined');
+const HASH = 'c'.repeat(64);
 const require = createRequire(import.meta.url);
 const esm = await import('@konfiqo/storefront-sdk');
 const cjs = require('@konfiqo/storefront-sdk');
@@ -31,24 +32,45 @@ for (const [name, sdk] of [
     publishableKey: 'pk_live_x',
     trustedStorefrontKey: 'sk',
     buyerIp: '1.2.3.4',
-    fetch: async () =>
-      new Response(
-        JSON.stringify({
-          statusCode: 409,
-          error: 'out_of_stock',
-          message: 'm',
-          variantIds: ['v'],
-        }),
-        {
-          status: 409,
-        },
-      ),
+    fetch: async (url) =>
+      String(url).endsWith('/agreements')
+        ? new Response(
+            JSON.stringify({
+              orderNumber: 'S-1',
+              documents: [],
+              agreementsHash: HASH,
+            }),
+            { status: 200 },
+          )
+        : new Response(
+            JSON.stringify({
+              statusCode: 409,
+              error: 'out_of_stock',
+              message: 'm',
+              variantIds: ['v'],
+            }),
+            {
+              status: 409,
+            },
+          ),
   });
+  // The agreements call, then checkout with its hash (the contract).
+  const agreements = await client.carts.agreements('c1');
+  assert.equal(agreements.agreementsHash, HASH, `${name}: agreements`);
+  // Checkout without the hash is refused before any request.
   await assert.rejects(client.carts.checkout('c1'), (e) => {
-    assert.ok(e instanceof sdk.StorefrontError, `${name}: StorefrontError`);
-    assert.deepEqual(e.details, { variantIds: ['v'] });
+    assert.ok(e instanceof sdk.StorefrontError, `${name}: no-hash error`);
+    assert.equal(e.code, 'invalid_request');
     return true;
   });
+  await assert.rejects(
+    client.carts.checkout('c1', { agreementsHash: agreements.agreementsHash }),
+    (e) => {
+      assert.ok(e instanceof sdk.StorefrontError, `${name}: StorefrontError`);
+      assert.deepEqual(e.details, { variantIds: ['v'] });
+      return true;
+    },
+  );
   assert.equal(sdk.formatMoney(14990, 'TRY', 'tr-TR'), '₺149,90');
 }
 

@@ -1301,3 +1301,25 @@ describe('legal documents and agreements', () => {
     expectTypeOf<CheckoutOptions['agreementsHash']>().toEqualTypeOf<string>();
   });
 });
+
+describe('checkout without a valid agreements hash', () => {
+  it.each([
+    ['no options', undefined],
+    ['no hash', {}],
+    ['an empty hash', { agreementsHash: '' }],
+    ['a short hash', { agreementsHash: 'abc' }],
+    ['a non-string hash', { agreementsHash: 5 }],
+  ])('rejects %s with invalid_request and sends nothing', async (_n, o) => {
+    const { client, fetchMock } = setup();
+    const e = await rejection(
+      client.carts.checkout('c1', o as unknown as CheckoutOptions),
+    );
+    expect(isStorefrontError(e)).toBe(true);
+    expect(e.code).toBe('invalid_request');
+    expect(e.status).toBe(0);
+    expect(e.details).toEqual({
+      issues: [{ path: 'agreementsHash', message: expect.any(String) }],
+    });
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});

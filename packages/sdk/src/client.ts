@@ -584,8 +584,26 @@ export function createStorefrontClient(
           undefined,
           o,
         ),
-      checkout: (cartId, o) =>
-        request<CheckoutResult>(
+      checkout: async (cartId, o) => {
+        // A request without a valid hash cannot succeed: refuse it here.
+        const hash: unknown = o?.agreementsHash;
+        if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/i.test(hash)) {
+          throw new StorefrontError(
+            'invalid_request',
+            0,
+            'carts.checkout needs the agreementsHash of carts.agreements (64 hex characters)',
+            {
+              issues: [
+                {
+                  path: 'agreementsHash',
+                  message:
+                    'Must be the 64 hex characters from carts.agreements',
+                },
+              ],
+            },
+          );
+        }
+        return request<CheckoutResult>(
           'POST',
           () => `${cart(cartId)}/checkout`,
           { agreementsHash: o.agreementsHash },
@@ -593,7 +611,8 @@ export function createStorefrontClient(
           o.turnstileToken
             ? { [TURNSTILE_TOKEN_HEADER]: o.turnstileToken }
             : {},
-        ),
+        );
+      },
     },
     orders: {
       get: (orderId, token, o) =>
