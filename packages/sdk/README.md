@@ -358,6 +358,9 @@ try {
 | `cart_read_only`          | 409      | `{ status: 'ordered' \| 'expired' }`                                                                  | the cart can no longer change: `expired` → start a new cart; `ordered` → check out again (re-opens payment) or show the order                                                 |
 | `checkout_in_progress`    | 409      |                                                                                                       | another checkout of this cart is running: retry in a few seconds                                                                                                              |
 | `checkout_incomplete`     | 400      | `{ missing: ('lines' \| 'customer' \| 'identityNumber' \| 'shippingAddress' \| 'shippingOption')[] }` | collect what is missing                                                                                                                                                       |
+| `legal_not_confirmed`     | 409      |                                                                                                       | the store has not confirmed its legal texts and takes no orders yet: show a clear "not taking orders" message                                                                 |
+| `agreements_changed`      | 409      |                                                                                                       | the cart or a legal text changed after `carts.agreements`: load the agreements again, show them, then check out with the new hash                                             |
+| `cart_incomplete`         | 409      | `{ missing }` (as `checkout_incomplete`)                                                              | `carts.agreements` on a cart without lines, customer or address: collect what is missing, then load the agreements                                                            |
 | `cart_changed`            | 409      | `{ lines, subtotalMinor, shippingMinor, totalMinor, shippingOptions }`                                | prices or shipping changed: show the new totals, let the buyer confirm, then call checkout again. Never re-submit silently.                                                   |
 | `out_of_stock`            | 409      | `{ variantIds }`                                                                                      | remove / reduce those lines                                                                                                                                                   |
 | `invalid_personalization` | 400, 409 | `{ lineIds? }` (409 at checkout)                                                                      | 400: the text breaks the product's rule (or the product asks for none). 409: those lines' stored text is no longer valid: remove each line and add it again with a valid text |
@@ -612,7 +615,7 @@ the ad-pixel loader that use them.
      `allowedOrigins` (not as a store _domain_: store domains are routed
      to the hosted storefront);
    - set the store's `orderStatusUrl` to **your** order page, e.g.
-     `https://shop.example.com/orders/{orderId}?token={token}` (step 7);
+     `https://shop.example.com/orders/{orderId}?token={token}` (step 8);
    - add your origin to the tenant's payments connection **allowed return
      addresses** (`allowedReturnOrigins`), else checkout fails with
      `payment_unavailable`;
@@ -668,7 +671,7 @@ the ad-pixel loader that use them.
    settled: `status` is anything past `pendingPayment` (`paid`,
    `fulfilling`, `shipped`, `delivered`, `cancelled`, `refunded`, …), or it
    is still `pendingPayment` but `paymentStatus` is `failed` or `expired`
-   (offer to check out again, step 8). `paymentStatus: 'processing'` means
+   (offer to check out again, step 9). `paymentStatus: 'processing'` means
    the payment succeeded and the order is being updated: keep polling.
    `isOrderSettled(order)` in `@konfiqo/storefront-react` implements this
    rule. Do not send the token to analytics or logs.

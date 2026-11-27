@@ -53,6 +53,8 @@ export interface StorefrontErrorDetailsMap {
   out_of_stock: { variantIds: string[] };
   /** Collect what is missing, then check out again. */
   checkout_incomplete: { missing: CheckoutMissing[] };
+  /** `carts.agreements` on a cart that lacks these parts: collect them first. */
+  cart_incomplete: { missing: CheckoutMissing[] };
   /** Let the buyer fix `field`, then check out again. */
   invalid_buyer_details: { field: BuyerDetailField };
   /** Only `available` units can be added. */
@@ -359,6 +361,7 @@ function apiError(
       return new StorefrontError(code, status, message, {
         variantIds: arr<string>(b.variantIds),
       });
+    case 'cart_incomplete':
     case 'checkout_incomplete':
       return new StorefrontError(code, status, message, {
         missing: arr<CheckoutMissing>(b.missing),

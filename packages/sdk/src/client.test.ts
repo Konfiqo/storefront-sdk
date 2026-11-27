@@ -574,7 +574,12 @@ describe('errors', () => {
     { error: 'checkout_in_progress', status: 409 },
     { error: 'legal_not_confirmed', status: 409 },
     { error: 'agreements_changed', status: 409 },
-    { error: 'cart_incomplete', status: 409 },
+    {
+      error: 'cart_incomplete',
+      status: 409,
+      extra: { missing: ['customer', 'shippingAddress'] },
+      details: { missing: ['customer', 'shippingAddress'] },
+    },
     {
       error: 'checkout_incomplete',
       status: 400,
