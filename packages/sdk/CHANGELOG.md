@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.6.2
+
+- `SDK_VERSION` is `'0.6.2'`; nothing else changed. Released together
+  with `@konfiqo/storefront-react` 0.6.2.
+
 ## 0.6.1
 
 - `SDK_VERSION` is `'0.6.1'`; nothing else changed. Released together

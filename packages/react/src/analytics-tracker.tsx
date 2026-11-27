@@ -18,10 +18,10 @@ export interface AnalyticsTrackerProps {
  * Configures analytics and sends a `page_view` on mount and every route change.
  *
  * Pages whose URL carries a buyer secret are protected by path. On an
- * order-status page the URL sent is `/orders/:id`, and on both
- * `/orders/…` and `/cart/recover` the query is left out. A custom storefront must serve its
- * order-status and cart-recovery pages only at those paths, or not render
- * this component there.
+ * order-status page the URL sent is `/orders/:id`. On both `/orders/…` and
+ * `/cart/recover` the query is left out. A custom storefront must serve
+ * its order-status and cart-recovery pages only at those paths, or not
+ * render this component there.
  */
 export function AnalyticsTracker({
   baseUrl,

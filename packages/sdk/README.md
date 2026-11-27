@@ -1,7 +1,7 @@
 # @konfiqo/storefront-sdk
 
 Typed client for the Storefront API: catalog, carts, checkout, buyer order
-status and catalog images — plus helpers to present payment, format money
+status and catalog images, plus helpers to present payment, format money
 and remember the buyer's cart.
 
 - Works in browsers and in Node ≥ 20 (global `fetch`). ESM + CJS + `.d.ts`.
@@ -79,7 +79,7 @@ export default async function Page({
 ```
 
 Why the cache matters: server-side reads are throttled per publishable key
-**and your server's IP** — about **120 reads per minute** for all your
+**and your server's IP**, about **120 reads per minute** for all your
 buyers together (and a page often makes two or three reads: store,
 categories, products). Uncached server rendering starts failing with
 `rate_limited` at a few dozen page views per minute. With the cache above,
@@ -154,20 +154,20 @@ header is ever sent (`buyerIp` is ignored).
 
 The constructor **throws** when `trustedStorefrontKey` is given in a
 browser-like host: `window` or `document` defined, or a web worker. Hosts
-that define `window` on the server — jsdom, Electron renderers, React
-Native — are refused too; keep the trusted key in a plain server process.
+that define `window` on the server (jsdom, Electron renderers, React
+Native) are refused too; keep the trusted key in a plain server process.
 
 ## Client options
 
 | Option                 | Default        |                                                            |
 | ---------------------- | -------------- | ---------------------------------------------------------- |
-| `baseUrl`              | —              | `https://<store domain>/api`, or `/api` on the same origin |
-| `publishableKey`       | —              | `pk_live_…` / `pk_test_…`                                  |
+| `baseUrl`              | none           | `https://<store domain>/api`, or `/api` on the same origin |
+| `publishableKey`       | none           | `pk_live_…` / `pk_test_…`                                  |
 | `fetch`                | global `fetch` | any `fetch`-compatible function                            |
 | `timeoutMs`            | `15000`        | per request; on expiry the request is aborted → `timeout`  |
-| `trustedStorefrontKey` | —              | server only, see above                                     |
-| `serverKey`            | —              | server only, see Server usage                              |
-| `buyerIp`              | —              | required with `serverKey` or `trustedStorefrontKey`        |
+| `trustedStorefrontKey` | none           | server only, see above                                     |
+| `serverKey`            | none           | server only, see Server usage                              |
+| `buyerIp`              | none           | required with `serverKey` or `trustedStorefrontKey`        |
 
 **`pk_test_` is not a test mode**: it places real orders against the
 tenant's payment connection. Test against a store whose payments are in the
@@ -205,7 +205,7 @@ Path arguments (slugs, ids) that are empty, `.` or `..` reject with a
 | `account.get(page?)`                                                          | `GET /v1/account`                    | `Account`: profile, `savedAddresses`, one page of `orders` (20, newest first)                                                        |
 | `account.updateProfile({ name, surname, phone })`                             | `PUT /v1/account/profile`            | nothing                                                                                                                              |
 | `account.saveAddresses(list)`                                                 | `PUT /v1/account/addresses`          | `SavedAddress[]` as stored (max 5, one default)                                                                                      |
-| `media.url(key)`                                                              | —                                    | absolute image URL (synchronous)                                                                                                     |
+| `media.url(key)`                                                              | none                                 | absolute image URL (synchronous)                                                                                                     |
 
 ### Accounts and cart recovery
 
@@ -253,7 +253,7 @@ are ignored; every cart response is priced by the server.
 
 **Images.** `image`, `logo` and the theme's `logo` / `favicon` / section
 `image` are storage keys. `imageUrl` / `logoUrl` in responses are
-**relative** (`/v1/media/<key>?pk=…`) — prefix `baseUrl`, or call
+**relative** (`/v1/media/<key>?pk=…`); prefix `baseUrl`, or call
 `sf.media.url(key)`, which returns
 `${baseUrl}/v1/media/<each segment encoded>?pk=<publishable key>` (a key
 with an empty, `.` or `..` segment throws `invalid_path_segment`). The key
@@ -397,9 +397,9 @@ not be reached at all, or the page's origin is in **no** store's
 `allowedOrigins` (the browser then hides the response). Treat a
 `network_error` on checkout as "try again in a moment", not as a decline.
 
-**No retries.** The SDK never retries. Writes are not safely repeatable —
-in particular, checking out a cart whose payment failed places a **new**
-order — so retrying is your decision, per code (`checkout_in_progress`,
+**No retries.** The SDK never retries. Writes are not safely repeatable. In
+particular, checking out a cart whose payment failed places a **new**
+order, so retrying is your decision, per code (`checkout_in_progress`,
 `checkout_unavailable`, `catalog_unavailable`, `rate_limited`).
 
 ## Payment
@@ -431,11 +431,11 @@ const mount = mountPayment(document.getElementById('payment')!, result, {
 
 - **embedded** (`iyzico-checkout-form`): puts the provider's HTML into the
   element and re-creates every `<script>` (attributes + text) so it
-  executes — `innerHTML` alone never runs scripts. Mounting the same form
+  executes; `innerHTML` alone never runs scripts. Mounting the same form
   into the same element again does nothing; a different form replaces the
   old one. Scripts are never injected twice (safe with React Strict Mode).
-  Pass `mountPayment` only the **unmodified result of `checkout()`** —
-  never build a presentation, `embed` or redirect `url` from user input,
+  Pass `mountPayment` only the **unmodified result of `checkout()`**.
+  Never build a presentation, `embed` or redirect `url` from user input,
   URL parameters or storage: the embedded content is executed as script.
   This is the provider's own form: card data goes from it to the provider
   and never through your code. If you use a Content Security Policy, allow
@@ -507,30 +507,30 @@ API versions before cookie consent: treat them as `[]`, `''` and no text.
 Server-safe helpers for a store's own host (no browser API, so they run in
 server components):
 
-- `onDefaultDomain(host, suffix)` — whether `host` is the default store
+- `onDefaultDomain(host, suffix)` tells whether `host` is the default store
   domain suffix or a subdomain of it (case-insensitive; `false` without a
   suffix).
-- `pixelsForHost(adPixels, defaultDomain)` — on a default domain only
-  Google is kept: Meta and TikTok write their cookies to the registrable
+- `pixelsForHost(adPixels, defaultDomain)` keeps only Google on a default
+  domain: Meta and TikTok write their cookies to the registrable
   domain, which every default store domain shares.
-- `cookiesForHost(cookies, defaultDomain)` — on a default domain the
-  `customDomainOnly` cookies are dropped, and the list is empty when no
-  optional cookie is left (then no consent is needed).
+- `cookiesForHost(cookies, defaultDomain)` drops the `customDomainOnly`
+  cookies on a default domain, and returns an empty list when no optional
+  cookie is left (then no consent is needed).
 
 `@konfiqo/storefront-react` has the consent state, store analytics and
 the ad-pixel loader that use them.
 
 ## Helpers
 
-- `formatMoney(minor, currency, locale?)` — `Intl.NumberFormat` with the
-  currency's own minor digits: `formatMoney(14990, 'TRY', 'tr-TR')` →
+- `formatMoney(minor, currency, locale?)` formats with `Intl.NumberFormat`
+  and the currency's own minor digits: `formatMoney(14990, 'TRY', 'tr-TR')` →
   `₺149,90`.
-- `loadCartId(storage, storeId)`, `saveCartId(storage, storeId, cartId)`,
-  `clearCartId(storage, storeId)` — remember the cart per store in
+- `loadCartId(storage, storeId)`, `saveCartId(storage, storeId, cartId)` and
+  `clearCartId(storage, storeId)` remember the cart per store in
   `localStorage` (or any `{ getItem, setItem, removeItem }`). Key
   `storefront:cart:<storeId>`. They never throw: no storage (SSR), a
   throwing storage (private mode) → `null` / `false`.
-- `cookieCartStorage()` — the same interface over the first-party
+- `cookieCartStorage()` offers the same interface over the first-party
   `__Host-konfiqo_cart` cookie, which the hosted checkout on a store domain
   reads too.
 - **Clearing a cart on a store domain.** A frontend served on the store's
@@ -582,14 +582,14 @@ the ad-pixel loader that use them.
    `available === 0`.
 
 4. **Cart.** `carts.create()` once, `saveCartId(localStorage, storeId, cart.id)`.
-   The cart id is a bearer capability — keep it in the buyer's browser
+   The cart id is a bearer capability; keep it in the buyer's browser
    only. On `cart_not_found` or `cart_read_only` with `status: 'expired'`,
    `clearCartId` and create a new cart (on a store domain, through the
    React package's storage: see "Clearing a cart on a store domain").
    Carts live 7 days.
 
 5. **Checkout form.** `setCustomer` (Turkish mobile number; the **identity
-   number** — TC kimlik no, 11 digits — is required by the payment
+   number** (TC kimlik no, 11 digits) is required by the payment
    provider, is stored sealed, is never returned (`identityNumberProvided`
    tells you one is on file) and can be omitted on later calls to keep the
    one on file; show a KVKK notice next to the field), `setAddress`,
@@ -597,7 +597,7 @@ the ad-pixel loader that use them.
 
 6. **Pay.** If `store.checkoutChallenge` is set, render the challenge
    widget first ([below](#checkout-challenge)). `carts.checkout(cartId, { turnstileToken })`. Store the returned `token` with the
-   `orderId` — it is returned only once and is the buyer's only key to the
+   `orderId`; it is returned only once and is the buyer's only key to the
    order page. Then `mountPayment`. Handle `cart_changed` by showing the
    new totals and asking the buyer to confirm before calling checkout
    again; never charge silently.
@@ -618,7 +618,7 @@ the ad-pixel loader that use them.
    order, but the cart is **not** lost: the next `carts.get` or
    `carts.checkout` reopens it (`status: 'open'`) and checkout places a new
    order (new `orderId`, new `token`) with the same lines, buyer and
-   addresses — the buyer re-enters nothing, including the identity number,
+   addresses. The buyer re-enters nothing, including the identity number,
    which stays sealed on the cart until the order is paid or the cart
    expires. Calling checkout on an `ordered` cart whose payment is still
    pending re-opens the same payment (no new order). Stock is reserved for

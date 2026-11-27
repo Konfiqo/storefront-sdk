@@ -49,7 +49,7 @@ describe('exports', () => {
 describe('package.json', () => {
   it('takes the SDK as a peer, so the app and this package share one copy', () => {
     expect(pkg.dependencies?.['@konfiqo/storefront-sdk']).toBeUndefined();
-    expect(pkg.peerDependencies?.['@konfiqo/storefront-sdk']).toBe('^0.6.1');
+    expect(pkg.peerDependencies?.['@konfiqo/storefront-sdk']).toBe('^0.6.2');
     expect(pkg.devDependencies?.['@konfiqo/storefront-sdk']).toBeDefined();
   });
 
@@ -60,8 +60,8 @@ describe('package.json', () => {
     ]);
   });
 
-  it('is at 0.6.1 and ships only dist, README and LICENSE', () => {
-    expect(pkg.version).toBe('0.6.1');
+  it('is at 0.6.2 and ships only dist, README and LICENSE', () => {
+    expect(pkg.version).toBe('0.6.2');
     expect(pkg.files).toEqual(['dist', 'README.md', 'LICENSE']);
   });
 });

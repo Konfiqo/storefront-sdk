@@ -2,7 +2,12 @@
 // @vitest-environment-options {"url":"https://shop.test/"}
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdPixels } from '@konfiqo/storefront-sdk';
-import { configurePixels, firePixel, resetPixels } from './ad-pixels';
+import {
+  configurePixels,
+  firePixel,
+  resetPixels,
+  scrubbedLocation,
+} from './ad-pixels';
 
 const ALL: AdPixels = {
   meta: { pixelId: '123456789012345' },
@@ -236,12 +241,20 @@ describe('ad pixels', () => {
       [
         'config',
         'G-ABC123',
-        { send_page_view: false, cookie_domain: 'shop.test' },
+        {
+          send_page_view: false,
+          cookie_domain: 'shop.test',
+          page_location: 'https://shop.test/',
+        },
       ],
       [
         'config',
         'AW-111',
-        { send_page_view: false, cookie_domain: 'shop.test' },
+        {
+          send_page_view: false,
+          cookie_domain: 'shop.test',
+          page_location: 'https://shop.test/',
+        },
       ],
     ]);
     expect(
@@ -652,5 +665,139 @@ describe('events fired before the pixels are configured', () => {
     resetPixels();
     configurePixels(META, true);
     expect(viewContent(fbq)).toHaveLength(0);
+  });
+});
+
+describe('pixel hardening on token pages', () => {
+  const at = (url: string) => history.replaceState(null, '', url);
+  const calls = () => (w().dataLayer as IArguments[]).map((a) => Array.from(a));
+  beforeEach(() => at('/'));
+
+  it('meta turns automatic events off before init', () => {
+    configurePixels({ meta: { pixelId: '123456789012345' } }, true);
+    const q = (w().fbq.queue as unknown[][]).map((a) => Array.from(a));
+    const auto = q.findIndex((a) => a[0] === 'set' && a[1] === 'autoConfig');
+    const init = q.findIndex((a) => a[0] === 'init');
+    expect(q[auto]).toEqual(['set', 'autoConfig', false, '123456789012345']);
+    expect(init).toBeGreaterThan(auto);
+  });
+
+  it('scrubbedLocation removes the token param and keeps the rest', () => {
+    at('/shop?q=a&token=SECRET&page=2');
+    expect(scrubbedLocation()).toBe('https://shop.test/shop?q=a&page=2');
+    at('/shop?token=SECRET');
+    expect(scrubbedLocation()).toBe('https://shop.test/shop');
+  });
+
+  it('scrubbedLocation removes the whole query on a secret page', () => {
+    at('/orders/o1?token=SECRET&x=1#frag');
+    expect(scrubbedLocation()).toBe('https://shop.test/orders/o1');
+    at('/cart/recover?t=rt');
+    expect(scrubbedLocation()).toBe('https://shop.test/cart/recover');
+  });
+
+  it('every gtag config carries a scrubbed page_location', () => {
+    at('/shop?token=SECRET&q=a');
+    configurePixels({ google: { ga4Id: 'G-ABC123', adsId: 'AW-111' } }, true);
+    const configs = calls().filter((a) => a[0] === 'config');
+    expect(configs).toHaveLength(2);
+    for (const c of configs) {
+      expect(c[2]).toMatchObject({
+        send_page_view: false,
+        page_location: 'https://shop.test/shop?q=a',
+      });
+    }
+  });
+
+  it('every google event carries the current scrubbed page_location, not the first page', () => {
+    at('/a?q=1');
+    configurePixels(
+      {
+        google: { ga4Id: 'G-ABC123', adsId: 'AW-111', adsConversionLabel: 'l' },
+      },
+      true,
+    );
+    const { gtag } = spyGlobals();
+    at('/b?token=SECRET&x=2');
+    const events = [
+      { name: 'view_item' as const, productId: 'p', priceMinor: 1 },
+      {
+        name: 'add_to_cart' as const,
+        productId: 'p',
+        variantId: 'v',
+        priceMinor: 1,
+        quantity: 1,
+      },
+      { name: 'begin_checkout' as const, valueMinor: 1 },
+      { ...PURCHASE },
+    ];
+    for (const e of events) firePixel(e);
+    const sent = gtag.mock.calls.filter((c) => c[0] === 'event');
+    // view_item, add_to_cart, begin_checkout, purchase and the conversion.
+    expect(sent).toHaveLength(5);
+    for (const c of sent) {
+      expect(c[2].page_location).toBe('https://shop.test/b?x=2');
+    }
+  });
+
+  it('a secret page sends no google event, so its URL is never read', () => {
+    configurePixels({ google: { ga4Id: 'G-ABC123' } }, true);
+    const { gtag } = spyGlobals();
+    at('/orders/o1?token=SECRET');
+    firePixel({ name: 'begin_checkout', valueMinor: 1 });
+    expect(gtag).not.toHaveBeenCalled();
+  });
+
+  it('the google page_view carries a scrubbed page_location', () => {
+    configurePixels({ google: { ga4Id: 'G-ABC123' } }, true);
+    const { gtag } = spyGlobals();
+    at('/shop?token=SECRET&q=a');
+    firePixel({ name: 'page_view' });
+    expect(gtag.mock.calls).toEqual([
+      ['event', 'page_view', { page_location: 'https://shop.test/shop?q=a' }],
+    ]);
+  });
+});
+
+describe('held events are copied', () => {
+  it('mutating the caller object after firePixel changes nothing sent', () => {
+    const fbq = vi.fn();
+    w().fbq = fbq;
+    const ev = {
+      name: 'purchase' as const,
+      orderId: 'o9',
+      valueMinor: 1000,
+      items: [{ id: 'v1', quantity: 1, priceMinor: 1000 }],
+    };
+    firePixel(ev);
+    ev.orderId = 'changed';
+    ev.items[0]!.id = 'changed';
+    ev.items.push({ id: 'extra', quantity: 1, priceMinor: 1 });
+    configurePixels({ meta: { pixelId: '123456789012345' } }, true);
+    const sent = fbq.mock.calls.filter((c) => c[1] === 'Purchase');
+    expect(sent).toHaveLength(1);
+    expect(sent[0]![2].content_ids).toEqual(['v1']);
+    expect(sent[0]![3]).toEqual({ eventID: 'o9' });
+  });
+
+  it('falls back to a shallow copy when structuredClone is missing', () => {
+    vi.stubGlobal('structuredClone', undefined);
+    try {
+      const fbq = vi.fn();
+      w().fbq = fbq;
+      const ev = {
+        name: 'view_item' as const,
+        productId: 'p1',
+        priceMinor: 100,
+      };
+      firePixel(ev);
+      ev.productId = 'changed';
+      configurePixels({ meta: { pixelId: '123456789012345' } }, true);
+      expect(
+        fbq.mock.calls.find((c) => c[1] === 'ViewContent')![2],
+      ).toMatchObject({ content_ids: ['p1'] });
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 });

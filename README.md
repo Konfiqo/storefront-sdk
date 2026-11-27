@@ -37,7 +37,7 @@ To release, bump the version in both packages (and `SDK_VERSION` in
 changelogs, merge, then:
 
 ```sh
-git tag sdk-v0.5.0 && git push origin sdk-v0.5.0
+git tag sdk-vX.Y.Z && git push origin sdk-vX.Y.Z
 ```
 
 If React fails after the SDK published, bump the patch version of both

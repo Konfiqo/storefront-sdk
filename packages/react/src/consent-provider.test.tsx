@@ -93,6 +93,16 @@ beforeEach(() => {
 });
 
 describe('ConsentProvider', () => {
+  it('calls the latest onDecision, even when it changed after the first render', () => {
+    const first = vi.fn();
+    const second = vi.fn();
+    const { rerender } = render(ui(COOKIES, 'v1', first));
+    rerender(ui(COOKIES, 'v1', second));
+    click('accept all');
+    expect(first).not.toHaveBeenCalled();
+    expect(second).toHaveBeenCalledTimes(1);
+  });
+
   it('accept stores the choice and hands one record to onDecision', () => {
     const onDecision = vi.fn();
     render(ui(COOKIES, 'v1', onDecision));

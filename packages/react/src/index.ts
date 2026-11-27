@@ -57,6 +57,7 @@ export {
   firePixel,
   onSecretPage,
   resetPixels,
+  scrubbedLocation,
 } from './ad-pixels';
 export type { PixelEvent } from './ad-pixels';
 export { AdPixelsLoader } from './ad-pixels-loader';
