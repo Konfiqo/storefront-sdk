@@ -8,8 +8,7 @@
   `page_location` without the `token` query parameter. Every Google event
   reports the current page, so it stays correct after a client-side route
   change. On order-status and cart-recovery pages no query string or
-  fragment is kept. The new
-  `scrubbedLocation()` returns that URL.
+  fragment is kept. The new `scrubbedLocation()` returns that URL.
 - `firePixel` copies an event it holds before the first `configurePixels`,
   so changing the object afterwards does not change what is sent.
 - `ConsentProvider` no longer writes to a ref during render; behaviour is
