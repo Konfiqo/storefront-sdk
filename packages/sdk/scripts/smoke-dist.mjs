@@ -2,6 +2,7 @@
 // its own `exports` map — ESM `import` and CJS `require` — in plain Node
 // (no `window`) and exercises the client.
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 assert.equal(typeof window, 'undefined');
@@ -19,6 +20,9 @@ for (const [name, sdk] of [
     'formatMoney',
     'loadCartId',
     'isStorefrontError',
+    'pixelsForHost',
+    'cookiesForHost',
+    'onDefaultDomain',
   ]) {
     assert.equal(typeof sdk[fn], 'function', `${name}: ${fn}`);
   }
@@ -46,5 +50,19 @@ for (const [name, sdk] of [
     return true;
   });
   assert.equal(sdk.formatMoney(14990, 'TRY', 'tr-TR'), '₺149,90');
+}
+
+// The SDK is server-safe: no 'use client' directive, so React Server
+// Components can call its helpers (for example `pixelsForHost`) directly.
+for (const file of ['index.js', 'index.cjs']) {
+  const code = readFileSync(
+    new URL(`../dist/${file}`, import.meta.url),
+    'utf8',
+  );
+  assert.doesNotMatch(
+    code,
+    /['"]use client['"]/,
+    `${file}: the SDK must not be marked as client code`,
+  );
 }
 console.log('sdk dist smoke: esm + cjs ok');

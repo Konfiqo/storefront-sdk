@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.0
+
+- Server-safe host helpers for cookie consent and ad pixels:
+  `onDefaultDomain(host, suffix)`, `pixelsForHost(adPixels, defaultDomain)`
+  and `cookiesForHost(cookies, defaultDomain)`. They use no browser API, so
+  server components can call them.
+- Released together with `@konfiqo/storefront-react` 0.6.0, which adds
+  cookie consent, store analytics and ad-pixel logic for custom
+  storefronts. Pixel event ids there follow the product feed rows (variant
+  ids; the product as `product_group` before a variant is chosen).
+
 ## 0.5.0
 
 - Line personalization. `Product.personalization?` (`ProductPersonalization`:

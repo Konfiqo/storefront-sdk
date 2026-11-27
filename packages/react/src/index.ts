@@ -35,3 +35,29 @@ export type {
 } from './checkout-challenge';
 export { Content, renderContent } from './content';
 export type { ContentComponents, ContentProps } from './content';
+export { ConsentProvider, useConsent } from './consent-provider';
+export type { ConsentProviderProps, ConsentState } from './consent-provider';
+export { OPTIONAL_CATEGORIES } from './consent';
+export type {
+  ConsentRecord,
+  OptionalCookieCategory,
+  StoredConsent,
+} from './consent';
+export {
+  configureAnalytics,
+  track,
+  recordConsent,
+  resetAnalytics,
+} from './analytics';
+export type { AnalyticsEventType, AnalyticsExtra } from './analytics';
+export { AnalyticsTracker } from './analytics-tracker';
+export type { AnalyticsTrackerProps } from './analytics-tracker';
+export {
+  configurePixels,
+  firePixel,
+  onSecretPage,
+  resetPixels,
+} from './ad-pixels';
+export type { PixelEvent } from './ad-pixels';
+export { AdPixelsLoader } from './ad-pixels-loader';
+export type { AdPixelsLoaderProps } from './ad-pixels-loader';

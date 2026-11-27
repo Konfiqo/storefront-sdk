@@ -1,5 +1,5 @@
 /** Version of the Storefront SDK package. */
-export const SDK_VERSION = '0.5.0';
+export const SDK_VERSION = '0.6.0';
 
 export {
   createStorefrontClient,
@@ -57,6 +57,7 @@ export type {
   UnsupportedPaymentMount,
 } from './payment';
 export { formatMoney } from './money';
+export { cookiesForHost, onDefaultDomain, pixelsForHost } from './host-pixels';
 export {
   cartIdKey,
   clearCartId,

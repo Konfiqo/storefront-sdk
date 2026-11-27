@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import type { StorefrontClient } from '@konfiqo/storefront-sdk';
 import {
   CheckoutChallenge,
+  ConsentProvider,
   PaymentForm,
   StorefrontProvider,
   useCart,
@@ -12,7 +13,9 @@ import {
   useOrder,
   useProduct,
   useProducts,
+  useConsent,
   useStore,
+  onSecretPage,
 } from './index';
 import { mockClient } from './test-utils';
 
@@ -57,6 +60,33 @@ describe('server rendering (no window)', () => {
   });
 });
 
+describe('consent on the server', () => {
+  it('renders with the choice unknown and no bar', () => {
+    function Probe() {
+      const consent = useConsent();
+      return (
+        <p>{`${String(consent.needed)}|${String(consent.known)}|${String(consent.showBar)}`}</p>
+      );
+    }
+    const html = renderToString(
+      <ConsentProvider
+        cookies={[
+          {
+            name: '_vid',
+            category: 'analytics',
+            purpose: 'p',
+            durationDays: 1,
+          },
+        ]}
+        version="v1"
+      >
+        <Probe />
+      </ConsentProvider>,
+    );
+    expect(html).toContain('true|false|false');
+  });
+});
+
 describe('provider refuses secret options', () => {
   it.each(['serverKey', 'trustedStorefrontKey', 'buyerIp'])(
     'throws when config.%s is passed',
@@ -75,4 +105,12 @@ describe('provider refuses secret options', () => {
       ).toThrow(new RegExp(`config\\.${key}`));
     },
   );
+});
+
+describe('onSecretPage on the server', () => {
+  it('needs no location: no path defaults to a non-secret page', () => {
+    expect(typeof location).toBe('undefined');
+    expect(onSecretPage()).toBe(false);
+    expect(onSecretPage('/orders/o1')).toBe(true);
+  });
 });
