@@ -542,3 +542,115 @@ describe('pixel currency', () => {
     );
   });
 });
+
+describe('events fired before the pixels are configured', () => {
+  const VIEW = {
+    name: 'view_item' as const,
+    productId: 'p1',
+    variantId: 'v1',
+    priceMinor: 12990,
+  };
+  const viewContent = (fbq: ReturnType<typeof vi.fn>) =>
+    fbq.mock.calls.filter((c) => c[0] === 'track' && c[1] === 'ViewContent');
+  /** The configured page's spies, kept when `configurePixels` loads Meta. */
+  const metaSpy = () => {
+    const fbq = vi.fn();
+    w().fbq = fbq;
+    return fbq;
+  };
+  const META = { meta: { pixelId: '123456789012345' } };
+
+  it('a view_item queued before a grant is sent once configured, as a live call is', () => {
+    const fbq = metaSpy();
+    firePixel(VIEW);
+    expect(viewContent(fbq)).toHaveLength(0);
+    configurePixels(META, true);
+    const queued = viewContent(fbq);
+    expect(queued).toHaveLength(1);
+
+    reload();
+    const live = metaSpy();
+    configurePixels(META, true);
+    firePixel(VIEW);
+    expect(queued).toEqual(viewContent(live));
+    expect(queued[0]).toEqual([
+      'track',
+      'ViewContent',
+      {
+        content_ids: ['v1'],
+        content_type: 'product',
+        value: 129.9,
+        currency: 'TRY',
+      },
+    ]);
+  });
+
+  it('a queued event is dropped when the first configuration has no grant', () => {
+    const fbq = metaSpy();
+    firePixel(VIEW);
+    configurePixels(META, false);
+    configurePixels(META, true);
+    expect(viewContent(fbq)).toHaveLength(0);
+  });
+
+  it('after the first configuration events are not queued', () => {
+    const fbq = metaSpy();
+    configurePixels(META, false);
+    firePixel(VIEW);
+    configurePixels(META, true);
+    expect(viewContent(fbq)).toHaveLength(0);
+    firePixel(VIEW);
+    expect(viewContent(fbq)).toHaveLength(1);
+  });
+
+  it('keeps only the newest 20 queued events', () => {
+    const fbq = metaSpy();
+    for (let i = 0; i < 25; i++) {
+      firePixel({ name: 'view_item', productId: `p${i}`, priceMinor: 100 });
+    }
+    configurePixels(META, true);
+    const sent = viewContent(fbq).map(
+      (c) => (c[2] as { content_ids: string[] }).content_ids[0],
+    );
+    expect(sent).toEqual(Array.from({ length: 20 }, (_, i) => `p${i + 5}`));
+  });
+
+  it('an event queued on a secret page is never sent', () => {
+    const fbq = metaSpy();
+    history.replaceState(null, '', '/orders/o1?token=tk');
+    firePixel(VIEW);
+    history.replaceState(null, '', '/');
+    configurePixels(META, true);
+    expect(viewContent(fbq)).toHaveLength(0);
+  });
+
+  it('a queue flushed on a secret page sends nothing', () => {
+    const fbq = metaSpy();
+    firePixel(VIEW);
+    history.replaceState(null, '', '/orders/o1?token=tk');
+    configurePixels(META, true);
+    history.replaceState(null, '', '/');
+    expect(fbq).not.toHaveBeenCalled();
+  });
+
+  it('a queued purchase is deduped like a live one', () => {
+    const fbq = metaSpy();
+    firePixel(PURCHASE);
+    firePixel(PURCHASE);
+    configurePixels(META, true);
+    expect(fbq.mock.calls.filter((c) => c[1] === 'Purchase')).toHaveLength(1);
+    reload();
+    const again = metaSpy();
+    firePixel(PURCHASE);
+    configurePixels(META, true);
+    expect(again.mock.calls.filter((c) => c[1] === 'Purchase')).toHaveLength(0);
+  });
+
+  it('resetPixels() clears the queue', () => {
+    const fbq = metaSpy();
+    firePixel(VIEW);
+    resetPixels();
+    configurePixels(META, true);
+    expect(viewContent(fbq)).toHaveLength(0);
+  });
+});

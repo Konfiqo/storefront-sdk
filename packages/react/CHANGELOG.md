@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.6.1
+
+- `firePixel` holds events fired before the page's first `configurePixels`
+  (for example a `view_item` from a product page's mount effect during
+  hydration, before the consent is read). Up to 20 are held, the oldest
+  dropped first. The first configuration sends them in order when it
+  carries a `marketing` grant, and drops them otherwise; a later grant
+  never sends them. Events held or flushed on an order-status or
+  cart-recovery page are not sent. `resetPixels` also clears them.
+  Requires `@konfiqo/storefront-sdk` `^0.6.1`.
+
 ## 0.6.0
 
 - Cookie consent, store analytics and ad-pixel logic for custom storefronts
