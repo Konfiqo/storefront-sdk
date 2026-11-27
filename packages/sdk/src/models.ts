@@ -29,19 +29,23 @@ export interface StoreContact {
   phone: string | null;
 }
 
-/** Legal texts the storefront must show. Plain text as the seller wrote it. */
-export interface StoreLegal {
-  /** KVKK (personal data) notice. */
-  kvkk: string | null;
-  /** Distance sales agreement. */
-  distanceSales: string | null;
-  /** Returns policy. */
-  returns: string | null;
-  /**
-   * Cookie policy: the seller's text, or the platform default. (Absent from
-   * API versions before cookie consent existed.)
-   */
-  cookies?: string | null;
+/**
+ * The seller's company details, as entered in the store settings. Use them
+ * in an imprint or footer. Each field is null when not set.
+ */
+export interface StoreCompany {
+  /** Legal title of the company. */
+  title: string | null;
+  /** Registered address. */
+  address: string | null;
+  /** Tax office (vergi dairesi). */
+  taxOffice: string | null;
+  /** Tax number (10 or 11 digits). */
+  taxNumber: string | null;
+  /** MERSIS number (16 digits). */
+  mersisNumber: string | null;
+  /** KEP (registered e-mail) address. */
+  kepAddress: string | null;
 }
 
 /** What a cookie is for: necessary ones need no consent. */
@@ -94,6 +98,28 @@ export interface StoreContent {
   tree: ContentNode;
 }
 
+/** A legal text kept with a cart or an order: the text the buyer was shown. */
+export interface LegalDocument {
+  /** Content key, one of {@link LEGAL_KEYS}. */
+  key: string;
+  title: string;
+  /** `Markdoc.transform` output. Render with `<Content>`. */
+  tree: ContentNode;
+}
+
+/**
+ * `POST /v1/carts/:id/agreements`: the order documents filled in for this
+ * cart. Show them, then pass `agreementsHash` to `carts.checkout`.
+ */
+export interface CartAgreements {
+  /** The order number the order will get. Already printed in the documents. */
+  orderNumber: string;
+  /** The order documents (`legal.preliminary-information`, `legal.distance-sales`). */
+  documents: LegalDocument[];
+  /** Hash of the shown texts (64 hex characters). Checkout refuses a stale one. */
+  agreementsHash: string;
+}
+
 /** The ad pixels a store configured (ids are validated by the API). */
 export interface AdPixels {
   /** Meta Pixel. */
@@ -123,8 +149,8 @@ export interface Store {
   theme: ThemeV1 | null;
   /** Contact details. */
   contact: StoreContact;
-  /** Legal texts. */
-  legal: StoreLegal;
+  /** Company details of the seller. */
+  company: StoreCompany;
   /** Shipping rules, or null when the store has no shipping configured. */
   shipping: ShippingRules | null;
   /**
@@ -634,6 +660,8 @@ export interface Order {
   lines: OrderLine[];
   /** Shipments. */
   shipments: OrderShipment[];
+  /** The legal texts the buyer accepted at checkout, as placed. */
+  agreements: LegalDocument[];
 }
 
 // ----------------------------------------------------------------- account

@@ -381,9 +381,10 @@ export class CartStore {
    * anyway); a second call while one is in flight returns the same
    * promise. The cart is read again afterwards.
    */
-  checkout = (
-    options: { turnstileToken?: string } = {},
-  ): Promise<CheckoutResult> => {
+  checkout = (options: {
+    agreementsHash: string;
+    turnstileToken?: string;
+  }): Promise<CheckoutResult> => {
     if (this.pendingCheckout) return this.pendingCheckout;
     this.checkoutStarted = true;
     this.setCheckout({ isPending: true, error: null });
@@ -400,6 +401,7 @@ export class CartStore {
         );
       }
       return this.client.carts.checkout(id, {
+        agreementsHash: options.agreementsHash,
         turnstileToken: options.turnstileToken || undefined,
       });
     });

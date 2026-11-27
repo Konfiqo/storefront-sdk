@@ -16,6 +16,8 @@ import {
   wrapper,
 } from './test-utils';
 
+const HASH = 'b'.repeat(64);
+
 const KEY = cartIdKey('store-1');
 const embedded: CheckoutResult = {
   presentation: 'embedded',
@@ -35,10 +37,14 @@ describe('useCheckout', () => {
     });
     let returned;
     await act(async () => {
-      returned = await result.current.checkout({ turnstileToken: 'ts-1' });
+      returned = await result.current.checkout({
+        agreementsHash: HASH,
+        turnstileToken: 'ts-1',
+      });
     });
     expect(returned).toBe(embedded);
     expect(client.carts.checkout).toHaveBeenCalledWith('c1', {
+      agreementsHash: HASH,
       turnstileToken: 'ts-1',
     });
     expect(result.current).toMatchObject({
@@ -59,9 +65,13 @@ describe('useCheckout', () => {
       wrapper: wrapper(client, memoryStorage({ [KEY]: 'c1' })),
     });
     await act(async () => {
-      await result.current.checkout({ turnstileToken: null });
+      await result.current.checkout({
+        agreementsHash: HASH,
+        turnstileToken: null,
+      });
     });
     expect(client.carts.checkout).toHaveBeenCalledWith('c1', {
+      agreementsHash: HASH,
       turnstileToken: undefined,
     });
   });
@@ -89,7 +99,9 @@ describe('useCheckout', () => {
       expect(result.current.cart.cart?.totalMinor).toBe(1000),
     );
     await act(async () => {
-      await expect(result.current.checkout.checkout()).rejects.toMatchObject({
+      await expect(
+        result.current.checkout.checkout({ agreementsHash: HASH }),
+      ).rejects.toMatchObject({
         code: 'cart_changed',
       });
     });
@@ -111,7 +123,7 @@ describe('useCheckout', () => {
       wrapper: wrapper(client),
     });
     await act(async () => {
-      await result.current.checkout().catch(() => {});
+      await result.current.checkout({ agreementsHash: HASH }).catch(() => {});
     });
     expect(result.current.error).toMatchObject({
       code: 'checkout_incomplete',
@@ -131,8 +143,8 @@ describe('useCheckout', () => {
     let a!: Promise<CheckoutResult>;
     let b!: Promise<CheckoutResult>;
     act(() => {
-      a = result.current.checkout();
-      b = result.current.checkout();
+      a = result.current.checkout({ agreementsHash: HASH });
+      b = result.current.checkout({ agreementsHash: HASH });
     });
     expect(a).toBe(b);
     expect(result.current.isPending).toBe(true);
@@ -161,7 +173,7 @@ describe('useCheckout', () => {
       </Wrapper>,
     );
     act(() => {
-      void latest!.checkout().catch(() => {});
+      void latest!.checkout({ agreementsHash: HASH }).catch(() => {});
     });
     await waitFor(() => expect(client.carts.checkout).toHaveBeenCalled());
     const options = client.carts.checkout.mock.calls[0]![1]!;
@@ -197,7 +209,7 @@ describe('useCheckout', () => {
     });
     let p!: Promise<CheckoutResult>;
     act(() => {
-      p = result.current.checkout();
+      p = result.current.checkout({ agreementsHash: HASH });
     });
     await waitFor(() => expect(client.carts.checkout).toHaveBeenCalled());
     unmount();
@@ -228,7 +240,7 @@ describe('useCheckout', () => {
     await waitFor(() => expect(result.current.cart.cart?.id).toBe('c1'));
     let p!: Promise<CheckoutResult>;
     act(() => {
-      p = result.current.checkout.checkout();
+      p = result.current.checkout.checkout({ agreementsHash: HASH });
     });
     await waitFor(() => expect(client.carts.checkout).toHaveBeenCalled());
     act(() => result.current.cart.reset());
@@ -251,7 +263,7 @@ describe('useCheckout', () => {
       wrapper: wrapper(client, memoryStorage({ [KEY]: 'c1' })),
     });
     await act(async () => {
-      await result.current.checkout().catch(() => {});
+      await result.current.checkout({ agreementsHash: HASH }).catch(() => {});
     });
     expect(result.current.error).toMatchObject({
       code: 'checkout_in_progress',

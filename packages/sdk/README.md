@@ -181,31 +181,32 @@ with the response body or rejects with a [`StorefrontError`](#errors).
 Path arguments (slugs, ids) that are empty, `.` or `..` reject with a
 `TypeError` (`invalid_path_segment`) without a request.
 
-| Method                                                                        | Route                                | Resolves with                                                                                                                        |
-| ----------------------------------------------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------ |
-| `store.get()`                                                                 | `GET /v1/store`                      | `Store`: name, `defaultLanguage`, `currency`, `logo`/`logoUrl`, `theme` (`ThemeV1`, as stored), contact, legal texts, shipping rules |
-| `categories.list()`                                                           | `GET /v1/categories`                 | `{ items: Category[] }` (active tree, sorted)                                                                                        |
-| `products.list({ category?, q?, page?, pageSize? })`                          | `GET /v1/products`                   | `{ items: Product[], pagination }` (`pageSize` 1–100, default 20)                                                                    |
-| `products.get(slug)`                                                          | `GET /v1/products/:slug`             | `Product`                                                                                                                            |
-| `carts.create()`                                                              | `POST /v1/carts`                     | `Cart`                                                                                                                               |
-| `carts.get(cartId)`                                                           | `GET /v1/carts/:id`                  | `Cart`                                                                                                                               |
-| `carts.addLine(cartId, { variantId, quantity, personalization? })`            | `POST /v1/carts/:id/lines`           | `Cart`                                                                                                                               |
-| `carts.updateLine(cartId, lineId, { quantity })`                              | `PATCH /v1/carts/:id/lines/:lineId`  | `Cart`                                                                                                                               |
-| `carts.removeLine(cartId, lineId)`                                            | `DELETE /v1/carts/:id/lines/:lineId` | `Cart`                                                                                                                               |
-| `carts.setCustomer(cartId, { email, name, surname, phone, identityNumber? })` | `PUT /v1/carts/:id/customer`         | `Cart`                                                                                                                               |
-| `carts.setAddress(cartId, { shipping, billing? })`                            | `PUT /v1/carts/:id/address`          | `Cart`                                                                                                                               |
-| `carts.shippingOptions(cartId)`                                               | `GET /v1/carts/:id/shipping-options` | `{ items: { id, priceMinor }[] }`                                                                                                    |
-| `carts.setShippingOption(cartId, optionId)`                                   | `PUT /v1/carts/:id/shipping-option`  | `Cart`                                                                                                                               |
-| `carts.checkout(cartId, { turnstileToken? })`                                 | `POST /v1/carts/:id/checkout`        | `CheckoutResult` (see [Checkout challenge](#checkout-challenge))                                                                     |
-| `orders.get(orderId, token)`                                                  | `GET /v1/orders/:id?token=`          | `Order`                                                                                                                              |
-| `carts.recover(token)`                                                        | `POST /v1/carts/recover`             | `{ cartId }`: a **new** cart with the abandoned cart's lines (see [Accounts](#accounts-and-cart-recovery))                           |
-| `account.requestCode(email, { turnstileToken? })`                             | `POST /v1/account/code`              | nothing (202 for any address)                                                                                                        |
-| `account.signIn(email, code)`                                                 | `POST /v1/account/session`           | `{ customer: { email } }`; sets the session cookie                                                                                   |
-| `account.signOut()`                                                           | `DELETE /v1/account/session`         | nothing                                                                                                                              |
-| `account.get(page?)`                                                          | `GET /v1/account`                    | `Account`: profile, `savedAddresses`, one page of `orders` (20, newest first)                                                        |
-| `account.updateProfile({ name, surname, phone })`                             | `PUT /v1/account/profile`            | nothing                                                                                                                              |
-| `account.saveAddresses(list)`                                                 | `PUT /v1/account/addresses`          | `SavedAddress[]` as stored (max 5, one default)                                                                                      |
-| `media.url(key)`                                                              | none                                 | absolute image URL (synchronous)                                                                                                     |
+| Method                                                                        | Route                                | Resolves with                                                                                                                      |
+| ----------------------------------------------------------------------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `store.get()`                                                                 | `GET /v1/store`                      | `Store`: name, `defaultLanguage`, `currency`, `logo`/`logoUrl`, `theme` (`ThemeV1`, as stored), contact, `company`, shipping rules |
+| `categories.list()`                                                           | `GET /v1/categories`                 | `{ items: Category[] }` (active tree, sorted)                                                                                      |
+| `products.list({ category?, q?, page?, pageSize? })`                          | `GET /v1/products`                   | `{ items: Product[], pagination }` (`pageSize` 1–100, default 20)                                                                  |
+| `products.get(slug)`                                                          | `GET /v1/products/:slug`             | `Product`                                                                                                                          |
+| `carts.create()`                                                              | `POST /v1/carts`                     | `Cart`                                                                                                                             |
+| `carts.get(cartId)`                                                           | `GET /v1/carts/:id`                  | `Cart`                                                                                                                             |
+| `carts.addLine(cartId, { variantId, quantity, personalization? })`            | `POST /v1/carts/:id/lines`           | `Cart`                                                                                                                             |
+| `carts.updateLine(cartId, lineId, { quantity })`                              | `PATCH /v1/carts/:id/lines/:lineId`  | `Cart`                                                                                                                             |
+| `carts.removeLine(cartId, lineId)`                                            | `DELETE /v1/carts/:id/lines/:lineId` | `Cart`                                                                                                                             |
+| `carts.setCustomer(cartId, { email, name, surname, phone, identityNumber? })` | `PUT /v1/carts/:id/customer`         | `Cart`                                                                                                                             |
+| `carts.setAddress(cartId, { shipping, billing? })`                            | `PUT /v1/carts/:id/address`          | `Cart`                                                                                                                             |
+| `carts.shippingOptions(cartId)`                                               | `GET /v1/carts/:id/shipping-options` | `{ items: { id, priceMinor }[] }`                                                                                                  |
+| `carts.setShippingOption(cartId, optionId)`                                   | `PUT /v1/carts/:id/shipping-option`  | `Cart`                                                                                                                             |
+| `carts.agreements(cartId)`                                                    | `POST /v1/carts/:id/agreements`      | `CartAgreements` (see [Legal texts and agreements](#legal-texts-and-agreements))                                                   |
+| `carts.checkout(cartId, { agreementsHash, turnstileToken? })`                 | `POST /v1/carts/:id/checkout`        | `CheckoutResult` (see [Checkout challenge](#checkout-challenge))                                                                   |
+| `orders.get(orderId, token)`                                                  | `GET /v1/orders/:id?token=`          | `Order`                                                                                                                            |
+| `carts.recover(token)`                                                        | `POST /v1/carts/recover`             | `{ cartId }`: a **new** cart with the abandoned cart's lines (see [Accounts](#accounts-and-cart-recovery))                         |
+| `account.requestCode(email, { turnstileToken? })`                             | `POST /v1/account/code`              | nothing (202 for any address)                                                                                                      |
+| `account.signIn(email, code)`                                                 | `POST /v1/account/session`           | `{ customer: { email } }`; sets the session cookie                                                                                 |
+| `account.signOut()`                                                           | `DELETE /v1/account/session`         | nothing                                                                                                                            |
+| `account.get(page?)`                                                          | `GET /v1/account`                    | `Account`: profile, `savedAddresses`, one page of `orders` (20, newest first)                                                      |
+| `account.updateProfile({ name, surname, phone })`                             | `PUT /v1/account/profile`            | nothing                                                                                                                            |
+| `account.saveAddresses(list)`                                                 | `PUT /v1/account/addresses`          | `SavedAddress[]` as stored (max 5, one default)                                                                                    |
+| `media.url(key)`                                                              | none                                 | absolute image URL (synchronous)                                                                                                   |
 
 ### Accounts and cart recovery
 
@@ -301,7 +302,7 @@ without a response), `message` (for logs, not for logic) and `details`
 import { isStorefrontError } from '@konfiqo/storefront-sdk';
 
 try {
-  const result = await sf.carts.checkout(cartId);
+  const result = await sf.carts.checkout(cartId, { agreementsHash });
 } catch (e) {
   if (!isStorefrontError(e)) throw e;
   switch (e.code) {
@@ -316,6 +317,12 @@ try {
       break;
     case 'checkout_incomplete':
       ask(e.details.missing);
+      break;
+    case 'agreements_changed':
+      reloadAgreements(); // carts.agreements again, show, then checkout
+      break;
+    case 'legal_not_confirmed':
+      showNotTakingOrders();
       break;
     case 'invalid_buyer_details':
       focusField(e.details.field);
@@ -348,9 +355,12 @@ try {
 | `too_many_lines`          | 400      |                                                                                                       | a cart holds at most 50 lines                                                                                                                                                 |
 | `line_not_found`          | 404      |                                                                                                       | no line with that id                                                                                                                                                          |
 | `invalid_shipping_option` | 400      |                                                                                                       | the option is not offered for this cart                                                                                                                                       |
-| `cart_read_only`          | 409      | `{ status: 'ordered' \| 'expired' }`                                                                  | the cart can no longer change: `expired` → start a new cart; `ordered` → check out again (re-opens payment) or show the order                                                 |
+| `cart_read_only`          | 409      | `{ status: 'ordered' \| 'expired' }`                                                                  | the cart can no longer change: `expired` → start a new cart; `ordered` → show the order, or re-open payment with `REOPEN_AGREEMENTS_HASH` (step 9)                            |
 | `checkout_in_progress`    | 409      |                                                                                                       | another checkout of this cart is running: retry in a few seconds                                                                                                              |
 | `checkout_incomplete`     | 400      | `{ missing: ('lines' \| 'customer' \| 'identityNumber' \| 'shippingAddress' \| 'shippingOption')[] }` | collect what is missing                                                                                                                                                       |
+| `legal_not_confirmed`     | 409      |                                                                                                       | the store has not confirmed its legal texts and takes no orders yet: show a clear "not taking orders" message                                                                 |
+| `agreements_changed`      | 409      |                                                                                                       | the cart or a legal text changed after `carts.agreements`: load the agreements again, show them, then check out with the new hash                                             |
+| `cart_incomplete`         | 409      | `{ missing }` (as `checkout_incomplete`)                                                              | `carts.agreements` on a cart without lines, customer or address: collect what is missing, then load the agreements                                                            |
 | `cart_changed`            | 409      | `{ lines, subtotalMinor, shippingMinor, totalMinor, shippingOptions }`                                | prices or shipping changed: show the new totals, let the buyer confirm, then call checkout again. Never re-submit silently.                                                   |
 | `out_of_stock`            | 409      | `{ variantIds }`                                                                                      | remove / reduce those lines                                                                                                                                                   |
 | `invalid_personalization` | 400, 409 | `{ lineIds? }` (409 at checkout)                                                                      | 400: the text breaks the product's rule (or the product asks for none). 409: those lines' stored text is no longer valid: remove each line and add it again with a valid text |
@@ -417,7 +427,7 @@ order, so retrying is your decision, per code (`checkout_in_progress`,
 ```ts
 import { mountPayment } from '@konfiqo/storefront-sdk';
 
-const result = await sf.carts.checkout(cartId);
+const result = await sf.carts.checkout(cartId, { agreementsHash });
 if (result.token) saveOrderToken(result.orderId, result.token); // returned ONCE
 const token = result.token ?? loadOrderToken(result.orderId);
 
@@ -442,6 +452,49 @@ const mount = mountPayment(document.getElementById('payment')!, result, {
   the provider's script and frame origins.
 - **redirect**: `window.location.assign(url)`; only `http(s)` URLs.
 - **closed**: calls `onClosed(page)` and returns `{ kind: 'closed', page }`.
+
+## Legal texts and agreements
+
+`Store.legal` is gone. The six legal texts are store content under fixed
+keys, listed in `LEGAL_KEYS` (type `LegalKey`): `legal.kvkk`,
+`legal.privacy`, `legal.preliminary-information`, `legal.distance-sales`,
+`legal.returns` and `legal.cookies`. Build each public legal page with
+`getContent`; the answer is a Markdoc tree you render (`<Content>` in the
+React package). A text the seller has not written is answered with
+`content_not_found`: show a "missing" notice on that page.
+
+```ts
+import { LEGAL_KEYS } from '@konfiqo/storefront-sdk';
+
+const pages = await Promise.all(
+  LEGAL_KEYS.map((key) => sf.getContent(key).catch(() => null)),
+);
+```
+
+`store.company` holds the seller's title, address, tax office, tax number,
+MERSIS number and KEP address (each `string | null`) for an imprint or
+footer.
+
+Two of the texts are order documents: the preliminary information and the
+distance sales agreement. They contain the buyer's name, address and
+items, so they must be shown **filled in for the cart** before payment:
+
+1. Once the cart has lines, a customer and an address, call
+   `carts.agreements(cartId)`. It answers `{ orderNumber, documents,
+agreementsHash }`. The `documents` are `{ key, title, tree }`.
+2. Show the documents and ask the buyer to accept them. Call
+   `carts.agreements` again after every change to the cart.
+3. Check out with the hash:
+   `carts.checkout(cartId, { agreementsHash, turnstileToken? })`.
+4. If the cart or a legal text changed in between, checkout fails with
+   `agreements_changed` and creates no order. Load the agreements again,
+   show the new texts and let the buyer accept them. Never reuse the old
+   hash.
+5. A store that has not confirmed its legal texts refuses both calls with
+   `legal_not_confirmed`: tell the buyer the store is not taking orders.
+
+The order the buyer opens later (`orders.get`) carries `agreements`, the
+documents exactly as the buyer accepted them.
 
 ## Checkout challenge
 
@@ -468,6 +521,7 @@ const widget = challenge
 async function pay() {
   try {
     return await sf.carts.checkout(cartId, {
+      agreementsHash,
       turnstileToken: token ?? undefined,
     });
   } finally {
@@ -501,8 +555,10 @@ store's language, `durationDays`). It is empty when the store uses no
 optional cookie: then nothing needs the shopper's consent.
 `store.consentVersion` identifies the set of optional cookies ('' when
 none); a consent given for another version should be asked again.
-`store.legal.cookies` is the cookie policy text. All three are absent from
-API versions before cookie consent: treat them as `[]`, `''` and no text.
+The cookie policy text is the content `legal.cookies` (see
+[Legal texts and agreements](#legal-texts-and-agreements)). `cookies` and
+`consentVersion` are absent from API versions before cookie consent: treat
+them as `[]` and `''`.
 
 Server-safe helpers for a store's own host (no browser API, so they run in
 server components):
@@ -559,7 +615,7 @@ the ad-pixel loader that use them.
      `allowedOrigins` (not as a store _domain_: store domains are routed
      to the hosted storefront);
    - set the store's `orderStatusUrl` to **your** order page, e.g.
-     `https://shop.example.com/orders/{orderId}?token={token}` (step 7);
+     `https://shop.example.com/orders/{orderId}?token={token}` (step 8);
    - add your origin to the tenant's payments connection **allowed return
      addresses** (`allowedReturnOrigins`), else checkout fails with
      `payment_unavailable`;
@@ -575,8 +631,8 @@ the ad-pixel loader that use them.
    checkout) `x-konfiqo-turnstile-token` request headers cross-origin. Server-side requests (no `Origin`) are always
    allowed.
 
-3. **Catalog.** `store.get()` for name, currency, language, theme, legal
-   texts (show KVKK, distance-sales and returns texts at checkout);
+3. **Catalog.** `store.get()` for name, currency, language, theme and company
+   details; legal pages through `getContent(LEGAL_KEYS…)`;
    `categories.list()`, `products.list()`, `products.get(slug)`. Build
    variant pickers from `variant.optionValues`; disable variants with
    `available === 0`.
@@ -595,39 +651,56 @@ the ad-pixel loader that use them.
    one on file; show a KVKK notice next to the field), `setAddress`,
    `shippingOptions` + `setShippingOption`.
 
-6. **Pay.** If `store.checkoutChallenge` is set, render the challenge
-   widget first ([below](#checkout-challenge)). `carts.checkout(cartId, { turnstileToken })`. Store the returned `token` with the
+6. **Agreements.** Call `carts.agreements(cartId)`, show its `documents`
+   next to a confirmation checkbox, and keep its `agreementsHash`. Call it
+   again after any cart change. `legal_not_confirmed` means the store takes
+   no orders yet.
+
+7. **Pay.** If `store.checkoutChallenge` is set, render the challenge
+   widget first ([below](#checkout-challenge)). `carts.checkout(cartId, { agreementsHash, turnstileToken })`. Handle
+   `agreements_changed` by loading the agreements again. Store the returned `token` with the
    `orderId`; it is returned only once and is the buyer's only key to the
    order page. Then `mountPayment`. Handle `cart_changed` by showing the
    new totals and asking the buyer to confirm before calling checkout
    again; never charge silently.
 
-7. **Return URL.** The store's `orderStatusUrl`
+8. **Return URL.** The store's `orderStatusUrl`
    (`https://shop.example.com/orders/{orderId}?token={token}`) is where the
    payment provider sends the buyer back. Serve that page: read
    `orders.get(orderId, token)` and poll with backoff until the order is
    settled: `status` is anything past `pendingPayment` (`paid`,
    `fulfilling`, `shipped`, `delivered`, `cancelled`, `refunded`, …), or it
    is still `pendingPayment` but `paymentStatus` is `failed` or `expired`
-   (offer to check out again, step 8). `paymentStatus: 'processing'` means
+   (offer to check out again, step 9). `paymentStatus: 'processing'` means
    the payment succeeded and the order is being updated: keep polling.
    `isOrderSettled(order)` in `@konfiqo/storefront-react` implements this
    rule. Do not send the token to analytics or logs.
 
-8. **Failed payments.** A declined, failed or expired payment cancels the
+9. **Failed payments.** A declined, failed or expired payment cancels the
    order, but the cart is **not** lost: the next `carts.get` or
-   `carts.checkout` reopens it (`status: 'open'`) and checkout places a new
-   order (new `orderId`, new `token`) with the same lines, buyer and
-   addresses. The buyer re-enters nothing, including the identity number,
-   which stays sealed on the cart until the order is paid or the cart
-   expires. Calling checkout on an `ordered` cart whose payment is still
-   pending re-opens the same payment (no new order). Stock is reserved for
-   a pending order for up to 24 h.
+   `carts.checkout` reopens it (`status: 'open'`). The buyer re-enters
+   nothing, including the identity number, which stays sealed on the cart
+   until the order is paid or the cart expires. The new order gets a new
+   order number, so the agreements the buyer accepted no longer match:
+   checkout answers `agreements_changed`. Call `carts.agreements(cartId)`
+   again, show the documents, ask the buyer to accept them, and check out
+   with the new `agreementsHash`. That checkout places a new order (new
+   `orderId`, new `token`) with the same lines, buyer and addresses.
 
-9. **Secrets.** The publishable key is the only key that belongs in client
-   code. The tenant API key, the operator key and the trusted storefront
-   key are server secrets: never put them in a browser bundle, a mobile
-   app or a public repository.
+   **Re-opening a pending payment.** On an `ordered` cart whose payment is
+   still pending, `carts.agreements` answers `cart_read_only`, so there is
+   no new hash. Call
+   `carts.checkout(cartId, { agreementsHash: REOPEN_AGREEMENTS_HASH })`
+   (exported by this package). Commerce re-opens the same payment (no new
+   order) and does not read the hash on this path. If the old order was
+   cancelled in the meantime, checkout answers `agreements_changed`:
+   handle it as above. Stock is reserved for a pending order for up to
+   24 h.
 
-10. **Errors.** Map every code in the [table](#api-error-codes) to copy in
+10. **Secrets.** The publishable key is the only key that belongs in client
+    code. The tenant API key, the operator key and the trusted storefront
+    key are server secrets: never put them in a browser bundle, a mobile
+    app or a public repository.
+
+11. **Errors.** Map every code in the [table](#api-error-codes) to copy in
     your languages; never show `message` to buyers.

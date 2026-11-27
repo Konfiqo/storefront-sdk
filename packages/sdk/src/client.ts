@@ -7,6 +7,7 @@ import type {
   AccountSession,
   Cart,
   CategoryList,
+  CartAgreements,
   CheckoutResult,
   CustomerInput,
   Order,
@@ -62,8 +63,31 @@ export interface RequestCodeOptions extends RequestOptions {
   turnstileToken?: string;
 }
 
+/**
+ * The `agreementsHash` to send when re-opening payment on an `ordered` cart.
+ *
+ * On an `ordered` cart (the buyer already placed the order and payment is
+ * still pending), `carts.agreements` answers `cart_read_only`, so there is no
+ * fresh hash to send. Pass this value to `carts.checkout` instead: commerce
+ * re-opens the pending payment and does not read the hash on that path.
+ *
+ * If the old order was cancelled (for example, after a declined payment),
+ * commerce answers `agreements_changed` instead. Then call
+ * `carts.agreements` again, show the documents, ask the buyer to accept them,
+ * and check out with the new `agreementsHash`.
+ */
+export const REOPEN_AGREEMENTS_HASH = '0'.repeat(64);
+
 /** Options of `carts.checkout`. */
 export interface CheckoutOptions extends RequestOptions {
+  /**
+   * The `agreementsHash` of the {@link CartAgreements} the buyer was
+   * shown (`carts.agreements`). Sent as the JSON body. Checkout refuses
+   * with `agreements_changed` when the cart or a legal text changed since.
+   * To re-open payment on an `ordered` cart, pass
+   * {@link REOPEN_AGREEMENTS_HASH}.
+   */
+  agreementsHash: string;
   /**
    * The checkout challenge token (Cloudflare Turnstile), required when
    * `store.checkoutChallenge` is set. Single-use: get a new one (reset the
@@ -127,7 +151,7 @@ export interface StorefrontClient {
   getContent(key: string, options?: RequestOptions): Promise<StoreContent>;
   /** Store information. */
   readonly store: {
-    /** `GET /v1/store`: name, language, currency, logo, theme, contact, legal texts, shipping rules. */
+    /** `GET /v1/store`: name, language, currency, logo, theme, contact, company details, shipping rules. */
     get(options?: RequestOptions): Promise<Store>;
   };
   /** Categories. */
@@ -207,6 +231,20 @@ export interface StorefrontClient {
       options?: RequestOptions,
     ): Promise<Cart>;
     /**
+     * `POST /v1/carts/:id/agreements`: the order documents (preliminary
+     * information and distance sales agreement) filled in with this cart,
+     * and their hash. Show the documents, ask the buyer to accept them,
+     * then pass the hash to `checkout`. Call it again after any change to
+     * the cart. Refuses with `legal_not_confirmed` (the store takes no
+     * orders yet), `cart_incomplete`, or `cart_read_only` (the cart is
+     * ordered or expired; to re-open payment on an ordered cart, see
+     * {@link REOPEN_AGREEMENTS_HASH}).
+     */
+    agreements(
+      cartId: string,
+      options?: RequestOptions,
+    ): Promise<CartAgreements>;
+    /**
      * `POST /v1/carts/:id/checkout`: places the order (or re-opens payment
      * for the cart's order) and answers how to present payment. Keep the
      * returned `token`: it is returned only once. Not retried.
@@ -218,11 +256,17 @@ export interface StorefrontClient {
      * `turnstileToken` (see `renderTurnstile`); tokens are single-use, so
      * reset the widget after every call. Re-opening payment on an already
      * ordered cart needs no token.
+     *
+     * `agreementsHash` is required: send the hash from `agreements` that
+     * the buyer accepted. On `agreements_changed`, load the agreements
+     * again, show them and ask the buyer to accept before checking out
+     * with the new hash. This also happens after a declined payment: the
+     * cart opens again and the next order gets a new number. To re-open
+     * payment on an
+     * `ordered` cart, where `agreements` answers `cart_read_only`, pass
+     * {@link REOPEN_AGREEMENTS_HASH}.
      */
-    checkout(
-      cartId: string,
-      options?: CheckoutOptions,
-    ): Promise<CheckoutResult>;
+    checkout(cartId: string, options: CheckoutOptions): Promise<CheckoutResult>;
   };
   /** Buyer order status. */
   readonly orders: {
@@ -558,16 +602,42 @@ export function createStorefrontClient(
           { id: optionId },
           o,
         ),
-      checkout: (cartId, o) =>
-        request<CheckoutResult>(
+      agreements: (cartId, o) =>
+        request<CartAgreements>(
           'POST',
-          () => `${cart(cartId)}/checkout`,
+          () => `${cart(cartId)}/agreements`,
           undefined,
           o,
-          o?.turnstileToken
+        ),
+      checkout: async (cartId, o) => {
+        // A request without a valid hash cannot succeed: refuse it here.
+        const hash: unknown = o?.agreementsHash;
+        if (typeof hash !== 'string' || !/^[0-9a-f]{64}$/i.test(hash)) {
+          throw new StorefrontError(
+            'invalid_request',
+            0,
+            'carts.checkout needs the agreementsHash of carts.agreements (64 hex characters)',
+            {
+              issues: [
+                {
+                  path: 'agreementsHash',
+                  message:
+                    'Must be the 64 hex characters from carts.agreements',
+                },
+              ],
+            },
+          );
+        }
+        return request<CheckoutResult>(
+          'POST',
+          () => `${cart(cartId)}/checkout`,
+          { agreementsHash: o.agreementsHash },
+          o,
+          o.turnstileToken
             ? { [TURNSTILE_TOKEN_HEADER]: o.turnstileToken }
             : {},
-        ),
+        );
+      },
     },
     orders: {
       get: (orderId, token, o) =>

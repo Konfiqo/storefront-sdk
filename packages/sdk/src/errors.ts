@@ -53,6 +53,8 @@ export interface StorefrontErrorDetailsMap {
   out_of_stock: { variantIds: string[] };
   /** Collect what is missing, then check out again. */
   checkout_incomplete: { missing: CheckoutMissing[] };
+  /** `carts.agreements` on a cart that lacks these parts: collect them first. */
+  cart_incomplete: { missing: CheckoutMissing[] };
   /** Let the buyer fix `field`, then check out again. */
   invalid_buyer_details: { field: BuyerDetailField };
   /** Only `available` units can be added. */
@@ -88,6 +90,12 @@ export type StorefrontApiErrorCode =
   | 'cart_read_only'
   | 'checkout_in_progress'
   | 'checkout_incomplete'
+  // 409: the store has not confirmed its legal texts yet (no orders).
+  | 'legal_not_confirmed'
+  // 409: the cart or a legal text changed since `carts.agreements`: load them again.
+  | 'agreements_changed'
+  // 409: the cart lacks lines, customer or address, so there is nothing to agree to.
+  | 'cart_incomplete'
   | 'cart_changed'
   | 'invalid_personalization'
   | 'out_of_stock'
@@ -162,6 +170,9 @@ const API_CODES: ReadonlySet<string> = new Set<StorefrontApiErrorCode>([
   'cart_read_only',
   'checkout_in_progress',
   'checkout_incomplete',
+  'legal_not_confirmed',
+  'agreements_changed',
+  'cart_incomplete',
   'cart_changed',
   'invalid_personalization',
   'out_of_stock',
@@ -350,6 +361,7 @@ function apiError(
       return new StorefrontError(code, status, message, {
         variantIds: arr<string>(b.variantIds),
       });
+    case 'cart_incomplete':
     case 'checkout_incomplete':
       return new StorefrontError(code, status, message, {
         missing: arr<CheckoutMissing>(b.missing),

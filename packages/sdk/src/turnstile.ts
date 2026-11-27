@@ -104,7 +104,7 @@ export interface TurnstileWidget {
  * Renders a Turnstile widget with the store's `siteKey`
  * (`store.checkoutChallenge.siteKey`) into `element`, loading the script
  * first if needed. Pass each token from `onToken` to
- * `carts.checkout(id, { turnstileToken })`, then `reset()`.
+ * `carts.checkout(id, { agreementsHash, turnstileToken })`, then `reset()`.
  */
 export async function renderTurnstile(
   element: HTMLElement,

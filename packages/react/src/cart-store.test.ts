@@ -9,6 +9,8 @@ import {
   mockClient,
 } from './test-utils';
 
+const HASH = 'b'.repeat(64);
+
 const flush = () => new Promise((r) => setTimeout(r, 0));
 
 describe('CartStore', () => {
@@ -93,9 +95,10 @@ describe('CartStore', () => {
       orderNumber: '261115-AAAAAA',
       token: 'tok',
     };
-    const p = store.checkout();
+    const p = store.checkout({ agreementsHash: HASH });
     await flush();
     expect(client.carts.checkout).toHaveBeenCalledWith('c1', {
+      agreementsHash: HASH,
       turnstileToken: undefined,
     });
     storage.data.set('storefront:cart:s', 'c2');
