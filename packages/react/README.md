@@ -11,7 +11,7 @@ the payment form and the checkout challenge.
   "build your own storefront" guide.
 - No styling: components render a plain `<div>` you can give a `className`.
 - No runtime dependencies. Peer dependencies: `@konfiqo/storefront-sdk`
-  `^0.6.0` and `react` ≥ 18. Install the SDK yourself, so your code and this
+  `^0.6.1` and `react` ≥ 18. Install the SDK yourself, so your code and this
   package share one copy (`isStorefrontError` also recognises errors from a
   second copy, but one copy keeps the bundle small).
 - Server-rendering safe: nothing touches `window`, `document` or storage
@@ -380,7 +380,11 @@ export function Tracking({
   variant id). Ids follow the product feed rows: pass `variantId` as soon
   as a variant is chosen; before that, `view_item` names the product as a
   `product_group`. Prices are in minor units, in the `currency` given to
-  `AdPixelsLoader` (ISO 4217, default `'TRY'`).
+  `AdPixelsLoader` (ISO 4217, default `'TRY'`). Events fired before the
+  shopper's choice is read (for example from a mount effect during
+  hydration) are held, up to 20. The first configuration sends them if it carries a
+  `marketing` grant; otherwise they are dropped, and a later grant does
+  not send them.
 - **Which pixels and cookies a host may use.** On a default store domain,
   filter with the SDK's `onDefaultDomain`, `pixelsForHost` and
   `cookiesForHost`. They are server-safe, so call them in server

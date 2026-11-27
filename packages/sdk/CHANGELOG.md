@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.6.1
+
+- `SDK_VERSION` is `'0.6.1'`; nothing else changed. Released together
+  with `@konfiqo/storefront-react` 0.6.1, which sends pixel events fired
+  before the pixels are configured.
+
 ## 0.6.0
 
 - Server-safe host helpers for cookie consent and ad pixels:

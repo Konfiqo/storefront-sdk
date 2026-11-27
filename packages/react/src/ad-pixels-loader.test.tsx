@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 // @vitest-environment-options {"url":"https://shop.test/"}
+import { useEffect } from 'react';
 import { act, render } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { CookieInfo } from '@konfiqo/storefront-sdk';
@@ -107,6 +108,39 @@ describe('AdPixelsLoader', () => {
       'track',
       'InitiateCheckout',
       { value: 10, currency: 'EUR' },
+    ]);
+  });
+
+  it('a view_item fired in a mount effect during hydration reaches Meta under a stored grant', () => {
+    writeConsent('v1', ['marketing']);
+    function Product() {
+      useEffect(() => {
+        firePixel({ name: 'view_item', productId: 'p1', priceMinor: 12990 });
+      }, []);
+      return null;
+    }
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    render(
+      <ConsentProvider cookies={COOKIES} version="v1">
+        <AdPixelsLoader pixels={PIXELS} pathname="/" />
+        <Product />
+      </ConsentProvider>,
+      { container, hydrate: true },
+    );
+    const queue = (window as unknown as Record<string, { queue: unknown[][] }>)
+      .fbq!.queue;
+    expect(queue.filter((c) => c[1] === 'ViewContent')).toEqual([
+      [
+        'track',
+        'ViewContent',
+        {
+          content_ids: ['p1'],
+          content_type: 'product_group',
+          value: 129.9,
+          currency: 'TRY',
+        },
+      ],
     ]);
   });
 });

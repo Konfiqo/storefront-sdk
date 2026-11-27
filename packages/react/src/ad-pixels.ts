@@ -73,6 +73,16 @@ let currency = DEFAULT_CURRENCY;
 let granted = false;
 /** Platforms whose script has been added (once per page load). */
 const loaded = new Set<'meta' | 'tiktok' | 'google'>();
+/** Whether `configurePixels` has run on this page load. */
+let configured = false;
+/** At most this many events are held before the first configuration. */
+const MAX_EARLY = 20;
+/**
+ * Events fired before the first `configurePixels` (a product page's mount
+ * effect runs before the consent is read): sent by the first configuration
+ * under a grant, dropped by one without.
+ */
+const early: PixelEvent[] = [];
 
 /**
  * For tests only, not for production code: forgets the configuration, the
@@ -85,6 +95,8 @@ export function resetPixels(): void {
   granted = false;
   optedOut = false;
   loaded.clear();
+  configured = false;
+  early.length = 0;
 }
 
 /** Major units (minor / 100). */
@@ -398,6 +410,8 @@ export function configurePixels(
   isGranted: boolean,
   opts: { hostOnly?: boolean; currency?: string } = {},
 ): void {
+  const held = configured ? [] : early.splice(0);
+  configured = true;
   try {
     pixels = next;
     currency = opts.currency ?? DEFAULT_CURRENCY;
@@ -416,6 +430,8 @@ export function configurePixels(
         writeMarker(false);
       }
     }
+    // Without a grant `send` drops them: a later grant never sends them.
+    for (const e of held) send(e);
   } catch {
     // Pixels must never break the page.
   }
@@ -443,8 +459,22 @@ function markPurchased(orderId: string): void {
   }
 }
 
-/** Reports `e` to every enabled platform; a no-op without a grant. */
+/**
+ * Reports `e` to every enabled platform; a no-op without a grant. Before
+ * the page's first `configurePixels`, the newest 20 events are held for it.
+ */
 export function firePixel(e: PixelEvent): void {
+  if (!configured) {
+    // Nothing is held on the server (module state is shared by requests).
+    if (typeof window === 'undefined' || onSecretPage()) return;
+    early.push(e);
+    if (early.length > MAX_EARLY) early.shift();
+    return;
+  }
+  send(e);
+}
+
+function send(e: PixelEvent): void {
   try {
     if (!granted || !pixels || onSecretPage()) return;
     loadAll(pixels);
