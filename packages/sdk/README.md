@@ -154,8 +154,8 @@ header is ever sent (`buyerIp` is ignored).
 
 The constructor **throws** when `trustedStorefrontKey` is given in a
 browser-like host: `window` or `document` defined, or a web worker. Hosts
-that define `window` on the server, jsdom, Electron renderers, React
-Native, are refused too; keep the trusted key in a plain server process.
+that define `window` on the server (jsdom, Electron renderers, React
+Native) are refused too; keep the trusted key in a plain server process.
 
 ## Client options
 
@@ -507,30 +507,30 @@ API versions before cookie consent: treat them as `[]`, `''` and no text.
 Server-safe helpers for a store's own host (no browser API, so they run in
 server components):
 
-- `onDefaultDomain(host, suffix)`, whether `host` is the default store
+- `onDefaultDomain(host, suffix)` tells whether `host` is the default store
   domain suffix or a subdomain of it (case-insensitive; `false` without a
   suffix).
-- `pixelsForHost(adPixels, defaultDomain)`, on a default domain only
-  Google is kept: Meta and TikTok write their cookies to the registrable
+- `pixelsForHost(adPixels, defaultDomain)` keeps only Google on a default
+  domain: Meta and TikTok write their cookies to the registrable
   domain, which every default store domain shares.
-- `cookiesForHost(cookies, defaultDomain)`, on a default domain the
-  `customDomainOnly` cookies are dropped, and the list is empty when no
-  optional cookie is left (then no consent is needed).
+- `cookiesForHost(cookies, defaultDomain)` drops the `customDomainOnly`
+  cookies on a default domain, and returns an empty list when no optional
+  cookie is left (then no consent is needed).
 
 `@konfiqo/storefront-react` has the consent state, store analytics and
 the ad-pixel loader that use them.
 
 ## Helpers
 
-- `formatMoney(minor, currency, locale?)`, `Intl.NumberFormat` with the
-  currency's own minor digits: `formatMoney(14990, 'TRY', 'tr-TR')` →
+- `formatMoney(minor, currency, locale?)` formats with `Intl.NumberFormat`
+  and the currency's own minor digits: `formatMoney(14990, 'TRY', 'tr-TR')` →
   `₺149,90`.
-- `loadCartId(storage, storeId)`, `saveCartId(storage, storeId, cartId)`,
-  `clearCartId(storage, storeId)`, remember the cart per store in
+- `loadCartId(storage, storeId)`, `saveCartId(storage, storeId, cartId)` and
+  `clearCartId(storage, storeId)` remember the cart per store in
   `localStorage` (or any `{ getItem, setItem, removeItem }`). Key
   `storefront:cart:<storeId>`. They never throw: no storage (SSR), a
   throwing storage (private mode) → `null` / `false`.
-- `cookieCartStorage()`, the same interface over the first-party
+- `cookieCartStorage()` offers the same interface over the first-party
   `__Host-konfiqo_cart` cookie, which the hosted checkout on a store domain
   reads too.
 - **Clearing a cart on a store domain.** A frontend served on the store's
@@ -589,7 +589,7 @@ the ad-pixel loader that use them.
    Carts live 7 days.
 
 5. **Checkout form.** `setCustomer` (Turkish mobile number; the **identity
-   number**, TC kimlik no, 11 digits, is required by the payment
+   number** (TC kimlik no, 11 digits) is required by the payment
    provider, is stored sealed, is never returned (`identityNumberProvided`
    tells you one is on file) and can be omitted on later calls to keep the
    one on file; show a KVKK notice next to the field), `setAddress`,
@@ -618,7 +618,7 @@ the ad-pixel loader that use them.
    order, but the cart is **not** lost: the next `carts.get` or
    `carts.checkout` reopens it (`status: 'open'`) and checkout places a new
    order (new `orderId`, new `token`) with the same lines, buyer and
-   addresses; the buyer re-enters nothing, including the identity number,
+   addresses. The buyer re-enters nothing, including the identity number,
    which stays sealed on the cart until the order is paid or the cart
    expires. Calling checkout on an `ordered` cart whose payment is still
    pending re-opens the same payment (no new order). Stock is reserved for

@@ -709,6 +709,45 @@ describe('pixel hardening on token pages', () => {
     }
   });
 
+  it('every google event carries the current scrubbed page_location, not the first page', () => {
+    at('/a?q=1');
+    configurePixels(
+      {
+        google: { ga4Id: 'G-ABC123', adsId: 'AW-111', adsConversionLabel: 'l' },
+      },
+      true,
+    );
+    const { gtag } = spyGlobals();
+    at('/b?token=SECRET&x=2');
+    const events = [
+      { name: 'view_item' as const, productId: 'p', priceMinor: 1 },
+      {
+        name: 'add_to_cart' as const,
+        productId: 'p',
+        variantId: 'v',
+        priceMinor: 1,
+        quantity: 1,
+      },
+      { name: 'begin_checkout' as const, valueMinor: 1 },
+      { ...PURCHASE },
+    ];
+    for (const e of events) firePixel(e);
+    const sent = gtag.mock.calls.filter((c) => c[0] === 'event');
+    // view_item, add_to_cart, begin_checkout, purchase and the conversion.
+    expect(sent).toHaveLength(5);
+    for (const c of sent) {
+      expect(c[2].page_location).toBe('https://shop.test/b?x=2');
+    }
+  });
+
+  it('a secret page sends no google event, so its URL is never read', () => {
+    configurePixels({ google: { ga4Id: 'G-ABC123' } }, true);
+    const { gtag } = spyGlobals();
+    at('/orders/o1?token=SECRET');
+    firePixel({ name: 'begin_checkout', valueMinor: 1 });
+    expect(gtag).not.toHaveBeenCalled();
+  });
+
   it('the google page_view carries a scrubbed page_location', () => {
     configurePixels({ google: { ga4Id: 'G-ABC123' } }, true);
     const { gtag } = spyGlobals();

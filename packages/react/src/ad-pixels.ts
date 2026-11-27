@@ -629,10 +629,15 @@ function tiktok(ttq: NonNullable<PixelWindow['ttq']>, e: PixelEvent): void {
 }
 
 function google(
-  gtag: Fn,
+  rawGtag: Fn,
   g: NonNullable<AdPixels['google']>,
   e: PixelEvent,
 ): void {
+  // Every event names the current, scrubbed page: a `page_location` given
+  // to `config` would stay fixed to the page where Google was loaded.
+  const page_location = scrubbedLocation();
+  const gtag: Fn = (command, name, params) =>
+    rawGtag(command, name, { ...(params as object), page_location });
   const item = (id: string, quantity: number, priceMinor: number) => ({
     item_id: id,
     quantity,
@@ -640,7 +645,7 @@ function google(
   });
   switch (e.name) {
     case 'page_view':
-      gtag('event', 'page_view', { page_location: scrubbedLocation() });
+      gtag('event', 'page_view');
       return;
     case 'view_item':
       gtag('event', 'view_item', {

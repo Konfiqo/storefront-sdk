@@ -144,7 +144,7 @@ const {
 
 ## Cart storage
 
-- **`defaultCartStorage()`**, the provider's default storage (null on a
+- **`defaultCartStorage()`** is the provider's default storage (null on a
   server). `getItem` reads the `__Host-konfiqo_cart` cookie first and
   rewrites it on every read, renewing its expiry; when the cookie is gone
   (Safari keeps script-written cookies 7 days) it reads `localStorage` and
@@ -152,7 +152,7 @@ const {
   clears both and writes a `storefront:cart:<storeId>:cleared` tombstone in
   `localStorage`; while it is there no frontend on the store origin restores
   the old id from `localStorage`. The next `setItem` removes it.
-- **`useCartStorage()`**, a getter for the storage this provider uses
+- **`useCartStorage()`** is a getter for the storage this provider uses
   (call it in an effect or handler, never during render). Use it to save a
   cart id learned out of band (`saveCartId(getStorage(), storeId, id)`) or
   to clear one (`clearCartId(getStorage(), storeId)`).
@@ -219,8 +219,8 @@ const result = await checkout({ turnstileToken }); // CheckoutResult
 ```
 
 Presents payment with the SDK's `mountPayment`: the provider's embedded
-form inside the `<div>` (its scripts run once, also under React Strict
-Mode, which mounts effects twice), a top-level redirect (`redirect`), or
+form inside the `<div>` (its scripts run once, including under React
+Strict Mode, which mounts effects twice), a top-level redirect (`redirect`), or
 `onClosed(page)` (`closed`: `paid`, `cancelled`, `processing`, …). The form
 is removed on unmount.
 
@@ -290,8 +290,8 @@ const { order, error, isLoading, isPolling, refetch } = useOrder(id, token, {
 
 - Reads `orders.get(orderId, token)`. Missing `orderId` or `token`: reads
   nothing.
-- `pollUntilFinal`: reads again with backoff, 2 s, 4 s, 8 s, then every
-  15 s, until the order is settled (`isOrderSettled`): any status past
+- `pollUntilFinal`: reads again with a growing delay (2 s, 4 s, 8 s, then every
+  15 s) until the order is settled (`isOrderSettled`): any status past
   `pendingPayment` (`paid`, `fulfilling`, `shipped`, `delivered`,
   `cancelled`, `refunded`, …), or a pending order whose payment `failed` /
   `expired` (the buyer checks out again). Transient errors
@@ -406,10 +406,12 @@ export function Tracking({
 - **Hardening for pixels loaded on an earlier page.** Meta is loaded with
   `fbq('set', 'autoConfig', false, pixelId)` before `fbq('init', pixelId)`,
   so Meta sends no automatic button-click or page-metadata events. Every
-  Google `config` call and every Google `page_view` the SDK sends carries
-  an explicit `page_location`: the URL with the `token` query parameter
-  removed, and with the whole query string and fragment removed on the
-  secret pages above. `scrubbedLocation()` returns that URL.
+  Google `config` call and every Google event the SDK sends carries an
+  explicit `page_location` that is the current page URL with the `token`
+  query parameter removed, and with the whole query string and fragment
+  removed on the secret pages above. Each event reads the URL again, so it
+  is right after a client-side route change. `scrubbedLocation()` returns
+  that URL.
 - **Tests.** `resetAnalytics()` and `resetPixels()` forget the module
   state between tests. They are for tests only; do not call them in
   production code.
